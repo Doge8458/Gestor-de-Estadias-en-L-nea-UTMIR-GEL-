@@ -64,5 +64,4 @@ Este proyecto fue desarrollado por:
 
 ---
 
-
 **Desarrollado en mente para la comunidad estudiantil de la UTMiR.**

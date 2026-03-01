@@ -64,10 +64,5 @@ Este proyecto fue desarrollado por:
 
 ---
 
-## 📸 Vistas del Sistema
-
-*(Nota: Aquí puedes agregar imágenes más adelante arrastrándolas desde tu computadora directamente a GitHub para mostrar tu interfaz)*
-
----
 
 **Desarrollado en mente para la comunidad estudiantil de la UTMiR.**

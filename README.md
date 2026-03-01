@@ -8,6 +8,7 @@
 Plataforma web desarrollada para la **Universidad Tecnológica de Mineral de la Reforma (UTMiR)**. Este sistema permite la recepción, gestión y almacenamiento automático de los proyectos de estadías (Memorias) de los alumnos de Nivel Técnico Superior Universitario (TSU) y Licenciatura/Ingeniería.
 
 creador por:
+
 Doge8458 (Mario Alberto)
 
 

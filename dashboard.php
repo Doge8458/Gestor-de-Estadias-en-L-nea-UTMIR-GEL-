@@ -1,7 +1,7 @@
 <?php
 // 1. SESIÓN Y CONEXIÓN 
 session_start();
-if (!isset($_SESSION['matricula'])) { header("Location: ../index.html"); exit(); }
+if (!isset($_SESSION['matricula'])) { header("Location: index.html"); exit(); }
 $matricula_alumno = $_SESSION['matricula'];
 $nombre_alumno = $_SESSION['nombre'];
 

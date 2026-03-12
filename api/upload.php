@@ -104,7 +104,7 @@ try {
 
             if ($stmt->execute()) {
                 
-                $url_redireccion = "../dashboard.php?status=success&nivel=" . urlencode($nombreCarpetaNivel) . "&carrera=" . urlencode($programa_educativo);
+                $url_redireccion = "dashboard.php?status=success&nivel=" . urlencode($nombreCarpetaNivel) . "&carrera=" . urlencode($programa_educativo);
                 
                 echo json_encode([
                     'status' => 'success',

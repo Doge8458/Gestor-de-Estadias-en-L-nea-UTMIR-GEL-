@@ -1,5 +1,6 @@
 <?php
 session_start();
+// Redirige al index.html de la carpeta ADMIN si no hay sesión
 if (!isset($_SESSION['admin_logged'])) { header("Location: index.html"); exit(); }
 
 // Conexión a BD
@@ -30,8 +31,8 @@ $resultado = $conexion->query($sql);
     
     <style>
         :root {
-            /* Paleta Dark Institucional (Default) */
-            --bg-profundo: #2a0710;
+            /* Paleta Dark Institucional con Fondo Verde Oscuro (Afecta contenido principal) */
+            --bg-profundo: #022919; 
             --bg-card: #141414;
             --bg-input: #0a0a0a;
             --utmir-guinda: #801336;
@@ -43,7 +44,7 @@ $resultado = $conexion->query($sql);
             --peligro: #ef4444;
         }
 
-        /* Paleta Light Theme */
+        /* Paleta Light Theme (Afecta contenido principal) */
         [data-theme="light"] {
             --bg-profundo: #f3f4f6;
             --bg-card: #ffffff;
@@ -68,64 +69,66 @@ $resultado = $conexion->query($sql);
         }
 
         /* =========================================
-           SIDEBAR INSTITUCIONAL (Igual al Dashboard)
+           SIDEBAR INSTITUCIONAL (SIEMPRE OSCURA)
            ========================================= */
         .sidebar {
-            width: 280px; background: var(--bg-card); border-right: 1px solid var(--borde-sutil);
-            color: var(--blanco); padding: 40px 20px; display: flex; flex-direction: column;
+            width: 280px; 
+            background: #141414; /* Fondo oscuro forzado */
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            color: #ffffff; /* Texto siempre blanco */
+            padding: 40px 20px; display: flex; flex-direction: column;
             position: fixed; height: 100vh; top: 0; left: 0; box-sizing: border-box; z-index: 100;
-            transition: background-color 0.4s ease, border-color 0.4s ease;
         }
 
         .brand-logo { text-align: center; margin-bottom: 40px; }
-        .brand-logo h1 { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: 1px; color: var(--blanco); }
+        .brand-logo h1 { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: 1px; color: #ffffff; }
         .brand-logo span { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--utmir-verde); font-weight: 600; }
 
         .profile-card {
-            background: rgba(128, 128, 128, 0.05); border: 1px solid var(--borde-sutil);
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px; padding: 25px 15px; text-align: center; margin-bottom: auto;
         }
         .profile-avatar {
             width: 60px; height: 60px; background: var(--utmir-guinda); border-radius: 50%; 
             margin: 0 auto 15px auto; display: flex; justify-content: center; align-items: center;
-            font-size: 24px; color: #fff; font-weight: 800;
+            font-size: 24px; color: #ffffff; font-weight: 800;
         }
-        .profile-card h2 { font-size: 16px; margin: 0 0 10px 0; font-weight: 600; color: var(--blanco); }
+        .profile-card h2 { font-size: 16px; margin: 0 0 10px 0; font-weight: 600; color: #ffffff; }
         .matricula-badge { 
             display: inline-block; background: rgba(0, 168, 107, 0.15); color: var(--utmir-verde);
             padding: 5px 12px; border-radius: 20px; font-family: monospace; font-size: 13px; font-weight: 700;
             border: 1px solid rgba(0, 168, 107, 0.3);
         }
 
-        /* Toggle Switch */
+        /* Toggle Switch Independiente para la Sidebar */
         .theme-switch-wrapper { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
         .theme-switch { position: relative; display: inline-block; width: 64px; height: 32px; }
         .theme-switch input { display: none; }
         .slider.round {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #1a1a1a; transition: .4s; border-radius: 34px; border: 1px solid var(--borde-sutil);
+            background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 34px; border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .slider.round:before {
             position: absolute; content: ""; height: 24px; width: 24px; left: 4px; bottom: 3px;
-            background-color: #fff; transition: .4s; border-radius: 50%; z-index: 2;
+            background-color: #ffffff; transition: .4s; border-radius: 50%; z-index: 2;
         }
-        input:checked + .slider.round { background-color: #e2e8f0; }
-        input:checked + .slider.round:before { transform: translateX(30px); background-color: #111827; }
+        input:checked + .slider.round { background-color: var(--utmir-verde); }
+        input:checked + .slider.round:before { transform: translateX(30px); }
         .icon-moon, .icon-sun { position: absolute; top: 7px; width: 18px; height: 18px; z-index: 1; transition: .4s; }
-        .icon-moon { right: 8px; color: #fff; }
-        .icon-sun { left: 8px; color: #f59e0b; opacity: 0; }
+        .icon-moon { right: 8px; color: #ffffff; }
+        .icon-sun { left: 8px; color: #ffffff; opacity: 0; }
         input:checked + .slider.round .icon-moon { opacity: 0; }
         input:checked + .slider.round .icon-sun { opacity: 1; }
 
         .btn-logout {
-            background: rgba(128,128,128,0.05); border: 1px solid var(--borde-sutil);
-            color: var(--texto-claro); text-decoration: none; padding: 15px; border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #ffffff; text-decoration: none; padding: 15px; border-radius: 8px;
             display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; transition: 0.3s;
         }
-        .btn-logout:hover { background: var(--utmir-guinda); border-color: var(--utmir-guinda); color: #fff; }
+        .btn-logout:hover { background: var(--utmir-guinda); border-color: var(--utmir-guinda); color: #ffffff; }
 
         /* =========================================
-           CONTENIDO PRINCIPAL ADMIN
+           CONTENIDO PRINCIPAL ADMIN (CAMBIA DE TEMA)
            ========================================= */
         .main-content {
             flex: 1; margin-left: 280px; padding: 40px; box-sizing: border-box;
@@ -156,7 +159,7 @@ $resultado = $conexion->query($sql);
         }
         .search-input:focus { border-color: var(--utmir-verde); box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.15); }
         .btn-search {
-            background: var(--utmir-verde); color: #fff; border: none; padding: 0 30px;
+            background: var(--utmir-verde); color: #ffffff; border: none; padding: 0 30px;
             border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s;
         }
         .btn-search:hover { filter: brightness(1.1); transform: translateY(-2px); }
@@ -186,13 +189,13 @@ $resultado = $conexion->query($sql);
             padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600; text-align: center;
             border: 1px solid rgba(0, 168, 107, 0.2); transition: 0.3s;
         }
-        .btn-view:hover { background: var(--utmir-verde); color: #fff; }
+        .btn-view:hover { background: var(--utmir-verde); color: #ffffff; }
         
         .btn-delete {
             background: rgba(239, 68, 68, 0.1); color: var(--peligro); border: 1px solid rgba(239, 68, 68, 0.2);
             padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center;
         }
-        .btn-delete:hover { background: var(--peligro); color: #fff; }
+        .btn-delete:hover { background: var(--peligro); color: #ffffff; }
 
         .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: 16px; border: 1px dashed var(--borde-sutil); }
         .empty-state svg { color: var(--texto-mutado); margin-bottom: 15px; opacity: 0.5; }
@@ -217,15 +220,20 @@ $resultado = $conexion->query($sql);
         .modal-actions { display: flex; gap: 10px; }
         .btn-cancel { flex: 1; background: var(--bg-input); border: 1px solid var(--borde-sutil); color: var(--blanco); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
         .btn-cancel:hover { background: rgba(255,255,255,0.1); }
-        .btn-confirm { flex: 1; background: var(--peligro); border: none; color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .btn-confirm { flex: 1; background: var(--peligro); border: none; color: #ffffff; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
         .btn-confirm:hover { filter: brightness(1.2); }
-        .btn-ok { width: 100%; background: var(--utmir-verde); border: none; color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .btn-ok { width: 100%; background: var(--utmir-verde); border: none; color: #ffffff; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
 
         /* Responsive Móvil */
         .mobile-actions { display: none; }
         @media (max-width: 1000px) { 
             body { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; justify-content: space-between; align-items: center; padding: 15px 20px; border-right: none; border-bottom: 1px solid var(--borde-sutil); }
+            .sidebar { 
+                width: 100%; height: auto; position: relative; flex-direction: row; 
+                justify-content: space-between; align-items: center; padding: 15px 20px; 
+                border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+                background: #141414; /* Mantener oscuro en móvil */
+            }
             .profile-card, .brand-logo span { display: none; } 
             .brand-logo { margin: 0; }
             .mobile-actions { display: flex; align-items: center; gap: 15px; }
@@ -264,7 +272,7 @@ $resultado = $conexion->query($sql);
             </label>
         </div>
 
-        <a href="api/logout.php" class="btn-logout">
+        <a href="../api/logout_admin.php" class="btn-logout">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
             <span>Cerrar Sesión</span>
         </a>
@@ -279,7 +287,7 @@ $resultado = $conexion->query($sql);
                     </div>
                 </label>
             </div>
-            <a href="api/logout.php" class="btn-logout" title="Cerrar Sesión">
+            <a href="../api/logout_admin.php" class="btn-logout" title="Cerrar Sesión">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
             </a>
         </div>
@@ -338,7 +346,10 @@ $resultado = $conexion->query($sql);
         </div>
 
         <footer class="dashboard-footer">
-            <p>&copy; <span id="currentYear"></span> Universidad Tecnológica de Mineral de la Reforma. Panel Administrativo.</p>
+            <div class="footer-bottom">
+            PROYECTA • INNOVA • ALCANZA<br><br>
+            © <span id="currentYear"></span>. Universidad Tecnológica de Mineral de la Reforma. Todos los derechos reservados.
+            </div>
         </footer>
 
     </main>
@@ -420,8 +431,7 @@ $resultado = $conexion->query($sql);
 
         function ejecutarEliminacion() {
             if(idEliminarGlobal !== null) {
-                // Asegúrate de que esta ruta coincida con la ubicación de tu archivo delete_entrega.php
-                window.location.href = "api/delete_entrega.php?id=" + idEliminarGlobal;
+                window.location.href = "../api/delete_entrega.php?id=" + idEliminarGlobal;
             }
         }
 

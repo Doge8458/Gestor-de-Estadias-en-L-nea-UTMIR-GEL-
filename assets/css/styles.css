@@ -259,3 +259,136 @@ footer .lema {
 footer .lema.guinda {
     color: var(--utmir-guinda); /* Color cuando el formulario de Login está activo */
 }
+
+
+
+/*apartado plataforma administrativa, el lema del footer cambia a guinda cuando el
+formulario de login está activo. Para esto, se agrega la clase "guinda" al elemento del lema en el footer cuando el formulario de login está activo, y se define un estilo 
+para esa clase que cambia el color del texto a guinda. La transición suave se logra con 
+la propiedad "transition" en la regla CSS del lema.*/
+
+/* =========================================
+   ESTILOS DEL DASHBOARD Y TABLA (ADMIN)
+   ========================================= */
+
+/* Contenedor principal del panel */
+.dashboard-container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 50px auto;
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tarjeta blanca que envuelve la tabla */
+.table-wrapper {
+    background: var(--blanco);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Sombra suave y moderna */
+    padding: 30px;
+    overflow-x: auto; /* Permite scroll si la pantalla es pequeña */
+}
+
+/* Encabezado arriba de la tabla */
+.table-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--gris-fondo);
+}
+
+.table-header-top h2 {
+    color: var(--utmir-verde); /* Título en verde institucional */
+    font-size: 22px;
+    margin: 0;
+}
+
+/* --- DISEÑO DE LA TABLA --- */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    text-align: left;
+}
+
+/* Encabezado de la tabla */
+.styled-table thead tr {
+    background-color: var(--utmir-verde);
+    color: var(--blanco);
+}
+
+.styled-table th {
+    padding: 15px 20px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+/* Celdas del cuerpo */
+.styled-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    color: var(--gris-texto);
+}
+
+/* --- ANIMACIONES HOVER DE LA TABLA (EL DINAMISMO) --- */
+.styled-table tbody tr {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent; /* Borde invisible por defecto */
+    background-color: var(--blanco);
+}
+
+.styled-table tbody tr:hover {
+    background-color: #f4fbf7; /* Fondo verde súper clarito al pasar el mouse */
+    transform: translateY(-3px); /* Efecto de levitación */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08); /* Sombra al flotar */
+    border-left: 4px solid var(--utmir-guinda); /* Aparece la línea guinda a la izquierda */
+    border-radius: 5px;
+}
+
+/* Destacar el nombre del alumno */
+.styled-table td strong {
+    color: var(--utmir-verde);
+    font-size: 15px;
+}
+
+/* Píldora de estado (Para el cuatrimestre) */
+.badge {
+    background-color: var(--gris-fondo);
+    color: var(--utmir-verde);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    border: 1px solid rgba(0, 107, 63, 0.2);
+}
+
+/* --- BOTÓN DE ACCIÓN (ELIMINAR) --- */
+.btn-action {
+    background-color: transparent;
+    border: 1px solid var(--utmir-guinda);
+    color: var(--utmir-guinda);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* Animación del botón eliminar */
+.btn-action:hover {
+    background-color: var(--utmir-guinda);
+    color: var(--blanco);
+    box-shadow: 0 4px 12px rgba(128, 19, 54, 0.4);
+    transform: scale(1.05); /* El botón crece ligeramente */
+}

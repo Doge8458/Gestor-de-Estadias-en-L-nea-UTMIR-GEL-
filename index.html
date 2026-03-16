@@ -51,8 +51,8 @@
     </div>
 
     <footer>
-        © 2026 - Universidad Tecnológica de Mineral de la Reforma.
-        <div class="lema">PROYECTA • INNOVA • ALCANZA</div>
+        <div class="lema">PROYECTA • INNOVA • ALCANZA</div> <br></br>
+        © <span id="currentYear"></span>. Universidad Tecnológica de Mineral de la Reforma. Todos los derechos reservados.
     </footer>
 
     <script>
@@ -76,6 +76,8 @@
             // Devolvemos el color del lema a Verde
             lemaFooter.classList.remove('guinda');
         });
+        // NUEVO SCRIPT: Obtener el año dinámicamente
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
 
 </body>

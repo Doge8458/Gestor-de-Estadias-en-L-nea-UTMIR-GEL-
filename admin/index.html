@@ -17,7 +17,7 @@
                 <div class="gel-logo" style="color: var(--utmir-guinda);">GEL</div>
                 <div class="gel-subtitle" style="color: var(--utmir-guinda);">PANEL DE CONTROL</div>
                 
-                <h2 style="color: #333; margin-top:10px;">Acceso Autorizado</h2>
+                <h2 style="color: #333; margin-top:10px;">Bienvenido Administrador</h2>
                 <span>Ingresa tus credenciales administrativas para continuar.</span>
                 
                 <input type="text" name="user" placeholder="Usuario (Ej. admin)" required />
@@ -54,8 +54,8 @@
     </div>
 
     <footer>
-        © 2026 - Universidad Tecnológica de Mineral de la Reforma.
-        <div class="lema">PROYECTA • INNOVA • ALCANZA</div>
+        <div class="lema">PROYECTA • INNOVA • ALCANZA</div> <br></br>
+        © <span id="currentYear"></span>. Universidad Tecnológica de Mineral de la Reforma. Todos los derechos reservados.
     </footer>
 
     <script>
@@ -75,6 +75,9 @@
             container.classList.remove('right-panel-active');
             lemaFooter.classList.remove('guinda');
         });
+
+        // Obtener el año dinámicamente
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
 
 </body>

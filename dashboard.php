@@ -469,7 +469,7 @@ $haTerminadoTodo = ($yaSubioTSU && $yaSubioING);
                                 <svg class="anim-float" id="uploadIcon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--texto-mutado)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                                 <span class="file-msg" id="fileNameDisplay">Haga clic o arrastre el archivo aquí</span>
                                 <span class="file-submsg">Límite establecido: 5MB</span>
-                                <input type="file" name="archivo_pdf" id="archivo_pdf" accept=".pdf" required onchange="actualizarNombreArchivo(this)">
+                                <input type="file" name="memoria_archivo" id="archivo_pdf" accept=".pdf" required onchange="actualizarNombreArchivo(this)">
                             </div>
                         </div>
 

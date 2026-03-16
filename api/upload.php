@@ -125,7 +125,9 @@ try {
 } catch (Exception $e) {
     // Si hubo un error en cualquier parte del proceso (Drive, BD, Archivo),
     // devolvemos un JSON con el error.
-    http_response_code(500); // Código de error del servidor
+    
+    // http_response_code(500); <-- ¡BORRA O COMENTA ESTA LÍNEA!
+    
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()

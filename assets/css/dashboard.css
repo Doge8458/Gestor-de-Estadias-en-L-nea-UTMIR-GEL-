@@ -88,6 +88,13 @@
         .icon-bell { width: 20px; height: 20px; color: var(--utmir-verde); animation: swing 4s infinite ease-in-out; }
         .notif-item { background: rgba(255, 255, 255, 0.03); border-left: 3px solid var(--utmir-naranja); padding: 12px 15px; border-radius: 4px; font-size: 13px; color: var(--texto-claro); line-height: 1.5; }
         .notif-date { display: block; font-size: 11px; color: var(--utmir-verde); margin-bottom: 5px; font-weight: 600; }
+        .notif-item-button { width: 100%; border-top: 0; border-right: 0; border-bottom: 0; text-align: left; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+        .notif-item-button strong { color: var(--blanco); font-size: 13px; }
+        .notif-unread { background: rgba(231, 77, 35, 0.12); border-left-color: var(--utmir-naranja); }
+        .notif-date b { color: var(--utmir-naranja); margin-left: 8px; }
+        .notification-fab { position: fixed; top: 24px; right: 24px; width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--borde-sutil); background: var(--bg-card); color: var(--utmir-verde); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 900; box-shadow: 0 12px 28px rgba(0,0,0,0.28); }
+        .notification-fab svg { width: 22px; height: 22px; }
+        .notification-badge { position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--utmir-naranja); color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
 
         /* =========================================
            MODULO DE AVISO DE PERIODO PARA EL ALUMNO
@@ -199,6 +206,16 @@
         .message-icon-container { margin-bottom: 20px; }
         .message-title { font-size: 22px; margin-top: 0; color: var(--blanco); }
         .message-text { color: var(--texto-claro); font-size: 14px; line-height: 1.5; }
+        .notification-modal { z-index: 2500; }
+        .notification-modal-box { max-width: 640px; text-align: left; max-height: 82vh; display: flex; flex-direction: column; }
+        .notif-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+        .notif-modal-header h3 { color: var(--blanco); margin: 0; font-size: 20px; }
+        .notif-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--borde-sutil); background: var(--bg-input); color: var(--blanco); cursor: pointer; font-weight: 800; }
+        .notif-modal-list { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 6px; }
+        .notif-modal-item { background: var(--bg-input); border: 1px solid var(--borde-sutil); border-left: 4px solid var(--utmir-verde); border-radius: 8px; padding: 16px; }
+        .notif-modal-item h4 { color: var(--blanco); margin: 8px 0; font-size: 16px; }
+        .notif-modal-item p { color: var(--texto-claro); margin: 8px 0 0 0; line-height: 1.55; font-size: 14px; }
+        .notif-modal-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--texto-mutado); font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .video-modal { z-index: 2000; background: rgba(0,0,0,0.95); }
         .video-modal-box { max-width: 650px; width: 95%; }
         .video-title { color: var(--utmir-verde); font-size: 24px; margin-top: 0; }
@@ -223,6 +240,7 @@
             .theme-switch-wrapper { margin-bottom: 0; }
             .sidebar > .btn-logout, .sidebar > .theme-switch-wrapper { display: none; }
             .main-content { margin-left: 0; padding: 20px; }
+            .notification-fab { top: 14px; right: 14px; }
             .top-row, .content-grid, .form-row { grid-template-columns: 1fr; } 
             
             .periodo-modulo { grid-template-columns: 1fr; text-align: center; }

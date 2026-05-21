@@ -47,6 +47,12 @@
     </aside>
 
     <main class="main-content">
+        <button class="notification-fab" id="btnOpenNotifications" type="button" title="Abrir notificaciones">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <?php if ($notificaciones_sin_leer > 0): ?>
+                <span class="notification-badge" id="notificationBadge"><?php echo (int)$notificaciones_sin_leer; ?></span>
+            <?php endif; ?>
+        </button>
         
         <div class="top-row">
             <div class="hero-banner">
@@ -59,10 +65,23 @@
                     <svg class="icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                     <h3>Avisos de Administración</h3>
                 </div>
+                <?php if (!empty($notificaciones_alumno)): ?>
+                    <?php foreach (array_slice($notificaciones_alumno, 0, 3) as $notificacion): ?>
+                        <button type="button" class="notif-item notif-item-button <?php echo ((int)$notificacion['leida'] === 0) ? 'notif-unread' : ''; ?>" data-open-notifications>
+                            <span class="notif-date">
+                                <?php echo htmlspecialchars(date("d/m/Y h:i A", strtotime($notificacion['fecha_creacion']))); ?>
+                                <?php if ((int)$notificacion['leida'] === 0): ?><b>Nuevo</b><?php endif; ?>
+                            </span>
+                            <strong><?php echo htmlspecialchars($notificacion['asunto']); ?></strong>
+                            <span><?php echo htmlspecialchars(strlen($notificacion['mensaje']) > 110 ? substr($notificacion['mensaje'], 0, 110) . '...' : $notificacion['mensaje']); ?></span>
+                        </button>
+                    <?php endforeach; ?>
+                <?php else: ?>
                 <div class="notif-item">
                     <span class="notif-date">Mensaje Automático - Sistema Activo</span>
                     Mantente al tanto. Si tu documento requiere correcciones de formato, se te notificará en este panel.
                 </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -233,6 +252,41 @@
 
     </main>
 
+    <div class="modal-overlay notification-modal <?php echo ($notificaciones_sin_leer > 0) ? 'active' : ''; ?>" id="notificationsModal">
+        <div class="modal-box notification-modal-box">
+            <div class="notif-modal-header">
+                <h3>Notificaciones de administracion</h3>
+                <button type="button" class="notif-close" id="btnCloseNotifications" title="Cerrar">x</button>
+            </div>
+            <?php if (!empty($notificaciones_alumno)): ?>
+                <div class="notif-modal-list">
+                    <?php foreach ($notificaciones_alumno as $notificacion): ?>
+                        <article class="notif-modal-item <?php echo ((int)$notificacion['leida'] === 0) ? 'notif-unread' : ''; ?>">
+                            <div class="notif-modal-meta">
+                                <span><?php echo htmlspecialchars(date("d/m/Y h:i A", strtotime($notificacion['fecha_creacion']))); ?></span>
+                                <span><?php echo htmlspecialchars($notificacion['tipo'] === 'eliminacion' ? 'Archivo eliminado' : 'Mensaje'); ?></span>
+                            </div>
+                            <h4><?php echo htmlspecialchars($notificacion['asunto']); ?></h4>
+                            <?php if (!empty($notificacion['motivo'])): ?>
+                                <p><b>Motivo:</b> <?php echo htmlspecialchars($notificacion['motivo']); ?></p>
+                            <?php endif; ?>
+                            <p><?php echo nl2br(htmlspecialchars($notificacion['mensaje'])); ?></p>
+                            <?php if (!empty($notificacion['comentario'])): ?>
+                                <p><b>Comentario:</b> <?php echo nl2br(htmlspecialchars($notificacion['comentario'])); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($notificacion['detalle'])): ?>
+                                <p><b>Detalle:</b> <?php echo nl2br(htmlspecialchars($notificacion['detalle'])); ?></p>
+                            <?php endif; ?>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <p class="message-text">No tienes notificaciones pendientes.</p>
+            <?php endif; ?>
+            <button class="btn-ok" id="btnMarkNotifications">Entendido</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="loadingModal">
         <div class="modal-box">
             <svg class="anim-float modal-icon-spaced" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--utmir-verde)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg>
@@ -260,7 +314,9 @@
             'fechaInicio' => $fecha_inicio,
             'fechaFin' => $fecha_fin,
             'canUpload' => (!$haTerminadoTodo && $periodo_activo),
-            'videoVisto' => (int)$video_visto
+            'videoVisto' => (int)$video_visto,
+            'notificationIds' => array_values(array_map('intval', array_column($notificaciones_alumno, 'id_notificacion'))),
+            'unreadNotifications' => (int)$notificaciones_sin_leer
         ]); ?>
     </script>
 

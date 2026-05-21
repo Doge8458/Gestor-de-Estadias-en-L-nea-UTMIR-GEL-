@@ -6,14 +6,14 @@ const lemaFooter = document.querySelector('.lema');
 if (signUpButton && container && lemaFooter) {
     signUpButton.addEventListener('click', () => {
         container.classList.add('right-panel-active');
-        lemaFooter.classList.add('guinda');
+        lemaFooter.classList.add('naranja');
     });
 }
 
 if (signInButton && container && lemaFooter) {
     signInButton.addEventListener('click', () => {
         container.classList.remove('right-panel-active');
-        lemaFooter.classList.remove('guinda');
+        lemaFooter.classList.remove('naranja');
     });
 }
 

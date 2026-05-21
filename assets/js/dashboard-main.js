@@ -107,7 +107,57 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnMessageOk && typeof cerrarMensajeYRecargar === 'function') {
         btnMessageOk.addEventListener('click', cerrarMensajeYRecargar);
     }
+
+    configurarNotificaciones();
 });
+
+function configurarNotificaciones() {
+    const modal = document.getElementById('notificationsModal');
+    const openButton = document.getElementById('btnOpenNotifications');
+    const closeButton = document.getElementById('btnCloseNotifications');
+    const markButton = document.getElementById('btnMarkNotifications');
+    const notificationTriggers = document.querySelectorAll('[data-open-notifications]');
+
+    if (!modal) {
+        return;
+    }
+
+    const abrirNotificaciones = () => modal.classList.add('active');
+    const cerrarNotificaciones = () => {
+        modal.classList.remove('active');
+        marcarNotificacionesVistas();
+    };
+
+    openButton?.addEventListener('click', abrirNotificaciones);
+    notificationTriggers.forEach(trigger => trigger.addEventListener('click', abrirNotificaciones));
+    closeButton?.addEventListener('click', cerrarNotificaciones);
+    markButton?.addEventListener('click', cerrarNotificaciones);
+}
+
+async function marcarNotificacionesVistas() {
+    const ids = dashboardData.notificationIds || [];
+    const unread = Number(dashboardData.unreadNotifications || 0);
+
+    if (!ids.length || unread === 0) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('ids', JSON.stringify(ids));
+
+    try {
+        const response = await fetch('api/marcar_notificaciones.php', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+            dashboardData.unreadNotifications = 0;
+            document.getElementById('notificationBadge')?.remove();
+            document.querySelectorAll('.notif-unread').forEach(item => item.classList.remove('notif-unread'));
+        }
+    } catch (error) {
+        console.error('No se pudieron marcar las notificaciones como vistas.', error);
+    }
+}
 
 function configurarFormularioSubida() {
     const uploadForm = document.getElementById('uploadForm');

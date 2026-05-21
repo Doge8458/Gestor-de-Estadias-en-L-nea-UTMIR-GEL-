@@ -176,17 +176,17 @@
 .periodo-btn { padding: 12px 24px; font-size: 13px; }
 .btn-search-clear { background: var(--bg-input); color: var(--blanco); border: 1px solid var(--borde-sutil); text-decoration: none; display: flex; align-items: center; }
 
-.txt-module-card, .txt-results-panel { background: var(--bg-card, #18241e); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 30px; margin-bottom: 30px; }
-.txt-module-title { color: #fff; margin-top: 0; }
-.txt-dropzone { position: relative; border: 2px dashed #00a86b; padding: 40px 20px; text-align: center; border-radius: 12px; margin-bottom: 15px; cursor: pointer; }
-.txt-file-name { color: #fff; font-weight: bold; }
+.txt-module-card, .txt-results-panel { background: var(--bg-card); border: 1px solid var(--borde-sutil); border-radius: 16px; padding: 30px; margin-bottom: 30px; transition: background-color 0.4s ease, border-color 0.4s ease; }
+.txt-module-title { color: var(--blanco); margin-top: 0; }
+.txt-dropzone { position: relative; border: 2px dashed var(--utmir-verde); padding: 40px 20px; text-align: center; border-radius: 12px; margin-bottom: 15px; cursor: pointer; }
+.txt-file-name { color: var(--texto-claro); font-weight: bold; }
 .txt-file-input { opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer; }
 .txt-btn-submit, .txt-btn-enable { color: #fff; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-.txt-btn-submit { background: #00a86b; }
-.txt-btn-enable { background: #E74D23; }
+.txt-btn-submit { background: var(--utmir-verde); }
+.txt-btn-enable { background: var(--utmir-naranja); }
 .txt-results-panel { display: none; }
-.txt-results-table { width: 100%; border-collapse: collapse; margin-top: 15px; color: #e2e8f0; font-size: 14px; }
-.txt-results-header { text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.txt-results-table { width: 100%; border-collapse: collapse; margin-top: 15px; color: var(--texto-claro); font-size: 14px; }
+.txt-results-header { text-align: left; border-bottom: 1px solid var(--borde-sutil); }
 .txt-cell { padding: 10px; }
 
 .modal-box-wide { max-width: 600px; }
@@ -206,4 +206,26 @@
 .modal-highlight { color: var(--blanco); }
 .txt-status-active { color: #00a86b; font-weight: bold; }
 .txt-status-blocked { color: #ef4444; font-weight: bold; }
-.txt-result-row { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.txt-result-row { border-bottom: 1px solid var(--borde-sutil); }
+
+.admin-message-card { background: var(--bg-card); border: 1px solid var(--borde-sutil); border-left: 6px solid var(--utmir-verde); border-radius: 16px; padding: 30px; display: grid; grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.4fr); gap: 24px; transition: background-color 0.4s ease, border-color 0.4s ease; }
+.admin-message-copy h3 { margin: 0 0 8px 0; color: var(--blanco); font-size: 20px; }
+.admin-message-copy p { margin: 0; color: var(--texto-mutado); line-height: 1.6; font-size: 14px; }
+.admin-message-form, .delete-reason-form { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+.admin-message-form label, .delete-reason-form label { display: flex; flex-direction: column; gap: 8px; color: var(--texto-mutado); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.form-row-admin { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.admin-input, .admin-textarea { width: 100%; box-sizing: border-box; background: var(--bg-input); border: 1px solid var(--borde-sutil); border-radius: 8px; color: var(--blanco); font: inherit; padding: 12px 14px; outline: none; }
+.admin-input:focus, .admin-textarea:focus { border-color: var(--utmir-verde); box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.15); }
+.admin-textarea { resize: vertical; min-height: 88px; line-height: 1.5; }
+.admin-message-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.admin-form-status { color: var(--texto-mutado); font-size: 13px; font-weight: 600; }
+.admin-form-status-error { color: var(--peligro); }
+.admin-form-status-success { color: var(--utmir-verde); }
+.modal-delete-box { max-width: 620px; }
+.delete-reason-form { margin-bottom: 20px; }
+.is-hidden { display: none !important; }
+
+@media (max-width: 1000px) {
+    .admin-message-card, .form-row-admin { grid-template-columns: 1fr; }
+    .admin-message-actions { flex-direction: column; align-items: stretch; }
+}

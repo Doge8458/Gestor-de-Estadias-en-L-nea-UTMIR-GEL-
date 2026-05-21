@@ -26,17 +26,105 @@
         }
 
         let idEliminarGlobal = null;
-        function abrirModalDelete(id, matricula) { idEliminarGlobal = id; document.getElementById('modalMatriculaTexto').innerText = matricula; document.getElementById('modalConfirmacion').classList.add('active'); }
+        function resetFormularioEliminacion() {
+            document.getElementById('motivoEliminacion').value = '';
+            document.getElementById('motivoOtro').value = '';
+            document.getElementById('comentarioEliminacion').value = '';
+            document.getElementById('detalleOtro').value = '';
+            document.getElementById('deleteAdminStatus').innerText = '';
+            document.getElementById('grupoMotivoOtro').classList.add('is-hidden');
+            document.getElementById('grupoDetalleOtro').classList.add('is-hidden');
+        }
+        function abrirModalDelete(id, matricula) {
+            idEliminarGlobal = id;
+            resetFormularioEliminacion();
+            document.getElementById('modalMatriculaTexto').innerText = matricula;
+            document.getElementById('modalConfirmacion').classList.add('active');
+        }
         function abrirModalCalendario() { document.getElementById('modalCalendario').classList.add('active'); }
         function cerrarModal(idModal) { document.getElementById(idModal).classList.remove('active'); if (idModal === 'modalConfirmacion') idEliminarGlobal = null; }
-        function ejecutarEliminacion() { if(idEliminarGlobal !== null) window.location.href = "../api/delete_entrega.php?id=" + idEliminarGlobal; }
+        async function ejecutarEliminacion() {
+            if (idEliminarGlobal === null) return;
+
+            const motivo = document.getElementById('motivoEliminacion').value;
+            const motivoOtro = document.getElementById('motivoOtro').value.trim();
+            const comentario = document.getElementById('comentarioEliminacion').value.trim();
+            const detalleOtro = document.getElementById('detalleOtro').value.trim();
+            const status = document.getElementById('deleteAdminStatus');
+
+            if (!motivo) {
+                status.innerText = 'Selecciona el motivo de eliminacion.';
+                return;
+            }
+
+            if (motivo === 'otro' && (!motivoOtro || !detalleOtro)) {
+                status.innerText = 'Para Otro, escribe el motivo personalizado y la explicacion.';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('id', idEliminarGlobal);
+            formData.append('motivo_select', motivo);
+            formData.append('motivo_otro', motivoOtro);
+            formData.append('comentario', comentario);
+            formData.append('detalle_otro', detalleOtro);
+
+            status.innerText = 'Eliminando y enviando notificacion...';
+
+            try {
+                const response = await fetch('../api/delete_entrega.php', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    status.innerText = data.message || 'No se pudo eliminar la entrega.';
+                    return;
+                }
+
+                window.location.reload();
+            } catch (error) {
+                status.innerText = 'No se pudo conectar con el servidor.';
+            }
+        }
 
 
         document.getElementById('btnAbrirModalCalendario')?.addEventListener('click', abrirModalCalendario);
+        document.getElementById('motivoEliminacion')?.addEventListener('change', event => {
+            const esOtro = event.target.value === 'otro';
+            document.getElementById('grupoMotivoOtro').classList.toggle('is-hidden', !esOtro);
+            document.getElementById('grupoDetalleOtro').classList.toggle('is-hidden', !esOtro);
+            document.getElementById('deleteAdminStatus').innerText = '';
+        });
         document.querySelectorAll('[data-modal-close]').forEach(button => {
             button.addEventListener('click', () => cerrarModal(button.dataset.modalClose));
         });
         document.getElementById('btnConfirmarEliminacion')?.addEventListener('click', ejecutarEliminacion);
+        document.getElementById('formEnviarAviso')?.addEventListener('submit', async event => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const status = document.getElementById('avisoAdminStatus');
+            const formData = new FormData(form);
+
+            status.classList.remove('admin-form-status-error', 'admin-form-status-success');
+            status.innerText = 'Enviando mensaje...';
+
+            try {
+                const response = await fetch('../api/enviar_aviso.php', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    status.classList.add('admin-form-status-error');
+                    status.innerText = data.message || 'No se pudo enviar el mensaje.';
+                    return;
+                }
+
+                form.reset();
+                status.classList.add('admin-form-status-success');
+                status.innerText = data.message;
+            } catch (error) {
+                status.classList.add('admin-form-status-error');
+                status.innerText = 'No se pudo conectar con el servidor.';
+            }
+        });
         document.querySelectorAll('.main-row[data-detail-target]').forEach(row => {
             row.addEventListener('click', () => toggleDetails(row.dataset.detailTarget, row));
         });

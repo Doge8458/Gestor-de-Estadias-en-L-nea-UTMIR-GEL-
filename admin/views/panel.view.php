@@ -74,6 +74,37 @@
             </form>
         </div>
 
+        <div class="admin-message-card">
+            <div class="admin-message-copy">
+                <h3>Centro de mensajes para alumnos</h3>
+                <p>Busca al alumno por matricula y envia un aviso directo a su panel.</p>
+            </div>
+            <form id="formEnviarAviso" class="admin-message-form">
+                <div class="form-row-admin">
+                    <label>
+                        Matricula escolar
+                        <input type="number" name="matricula" class="admin-input" placeholder="Ej. 2403322" required>
+                    </label>
+                    <label>
+                        Asunto
+                        <input type="text" name="asunto" class="admin-input" maxlength="150" placeholder="Asunto del mensaje" required>
+                    </label>
+                </div>
+                <label>
+                    Motivo
+                    <input type="text" name="motivo" class="admin-input" maxlength="150" placeholder="Opcional">
+                </label>
+                <label>
+                    Texto del mensaje
+                    <textarea name="mensaje" class="admin-textarea" rows="4" placeholder="Escribe el aviso que vera el alumno..." required></textarea>
+                </label>
+                <div class="admin-message-actions">
+                    <span id="avisoAdminStatus" class="admin-form-status"></span>
+                    <button type="submit" class="btn-action-small btn-action-orange">Enviar mensaje</button>
+                </div>
+            </form>
+        </div>
+
         <div class="data-table-container">
             <table class="data-table">
                 <thead>
@@ -176,12 +207,6 @@
             </table>
         </div>
 
-        <footer class="dashboard-footer">
-            <div class="footer-bottom">
-            PROYECTA • INNOVA • ALCANZA<br><br>
-            © <span id="currentYear"></span>. Universidad Tecnológica de Mineral de la Reforma. Todos los derechos reservados.
-            </div>
-        </footer>
         <!-- ======================================================== -->
         <!-- MÓDULO DE HABILITACIÓN MASIVA (.TXT) -->
         <!-- ======================================================== -->
@@ -217,6 +242,12 @@
             </div>
         </div>
         <!-- ======================================================== -->
+        <footer class="dashboard-footer">
+            <div class="footer-bottom">
+            PROYECTA • INNOVA • ALCANZA<br><br>
+            © <span id="currentYear"></span>. Universidad Tecnológica de Mineral de la Reforma. Todos los derechos reservados.
+            </div>
+        </footer>
     </main>
 
     <div class="modal-overlay" id="modalCalendario">
@@ -236,10 +267,38 @@
     </div>
 
     <div class="modal-overlay" id="modalConfirmacion">
-        <div class="modal-box">
+        <div class="modal-box modal-delete-box">
             <div class="modal-icon icon-warning"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>
             <h3 class="modal-title">¿Eliminar Registro?</h3>
             <p class="modal-text">Estás a punto de eliminar la entrega del alumno <b id="modalMatriculaTexto" class="modal-highlight"></b>.</p>
+            <div class="delete-reason-form">
+                <label>
+                    Motivo obligatorio
+                    <select id="motivoEliminacion" class="admin-input" required>
+                        <option value="">Selecciona una opcion</option>
+                        <option value="paginas_no_enumeradas">Paginas no enumeradas</option>
+                        <option value="problemas_indice">Problemas con el indice</option>
+                        <option value="indice_no_coincide">El indice no coincide con las paginas</option>
+                        <option value="falta_documento_autorizacion">Falta del documento de autorizacion</option>
+                        <option value="documento_autorizacion_no_agregado">Documento de autorizacion no agregado</option>
+                        <option value="orden_paginas">Orden de las paginas</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </label>
+                <label id="grupoMotivoOtro" class="is-hidden">
+                    Motivo personalizado
+                    <input type="text" id="motivoOtro" class="admin-input" maxlength="150" placeholder="Escribe el motivo">
+                </label>
+                <label>
+                    Comentario adicional
+                    <textarea id="comentarioEliminacion" class="admin-textarea" rows="3" placeholder="Opcional para motivos comunes"></textarea>
+                </label>
+                <label id="grupoDetalleOtro" class="is-hidden">
+                    Explicacion del problema
+                    <textarea id="detalleOtro" class="admin-textarea" rows="3" placeholder="Obligatorio cuando el motivo es Otro"></textarea>
+                </label>
+                <span id="deleteAdminStatus" class="admin-form-status admin-form-status-error"></span>
+            </div>
             <div class="modal-actions">
                 <button class="btn-cancel" data-modal-close="modalConfirmacion">Cancelar</button>
                 <button class="btn-confirm" id="btnConfirmarEliminacion">Sí, Eliminar</button>

@@ -2,135 +2,70 @@
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 
-ini_set('display_errors', 0);
-error_reporting(E_ALL & ~E_DEPRECATED);
-
 if (!isset($_SESSION['admin_logged'])) {
-    http_response_code(401);
-    echo json_encode(['status' => 'error', 'message' => 'Sesion de administrador no valida.']);
-    exit();
+    echo json_encode(['status' => 'error', 'message' => 'Sesión caducada. Recarga la página.']); exit();
 }
 
-require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/notificaciones_helpers.php';
+require_once __DIR__ . '/mailer_helpers.php';
 
-$motivosPermitidos = [
-    'paginas_no_enumeradas' => 'Paginas no enumeradas',
-    'problemas_indice' => 'Problemas con el indice',
-    'indice_no_coincide' => 'El indice no coincide con las paginas',
-    'falta_documento_autorizacion' => 'Falta del documento de autorizacion',
-    'documento_autorizacion_no_agregado' => 'Documento de autorizacion no agregado',
-    'orden_paginas' => 'Orden de las paginas',
-    'otro' => 'Otro'
-];
-
-$idEntrega = isset($_POST['id']) ? (int)$_POST['id'] : 0;
-$motivoSeleccionado = trim($_POST['motivo_select'] ?? '');
-$motivoOtro = trim($_POST['motivo_otro'] ?? '');
+$id_entrega = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+$motivo_select = trim($_POST['motivo_select'] ?? '');
+$motivo_otro = trim($_POST['motivo_otro'] ?? '');
 $comentario = trim($_POST['comentario'] ?? '');
-$detalleOtro = trim($_POST['detalle_otro'] ?? '');
 
-if ($idEntrega <= 0) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'ID de entrega no valido.']);
-    exit();
+if ($id_entrega <= 0 || empty($motivo_select)) {
+    echo json_encode(['status' => 'error', 'message' => 'Faltan datos.']); exit();
 }
-
-if (!array_key_exists($motivoSeleccionado, $motivosPermitidos)) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Selecciona un motivo para eliminar el archivo.']);
-    exit();
-}
-
-if ($motivoSeleccionado === 'otro' && ($motivoOtro === '' || $detalleOtro === '')) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Cuando selecciones Otro debes escribir el motivo y explicar el problema.']);
-    exit();
-}
-
-$motivoFinal = $motivoSeleccionado === 'otro' ? $motivoOtro : $motivosPermitidos[$motivoSeleccionado];
-$detalleFinal = $motivoSeleccionado === 'otro' ? $detalleOtro : null;
-$comentarioFinal = $comentario !== '' ? $comentario : null;
 
 $conexion = new mysqli("localhost", "root", "", "portal_estadias");
-if ($conexion->connect_error) {
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'No se pudo conectar a la base de datos.']);
-    exit();
+
+$stmtInfo = $conexion->prepare("SELECT e.matricula_alumno, e.cuatrimestre_subido, a.nombre_completo, a.correo FROM entregas e JOIN alumnos a ON e.matricula_alumno = a.matricula WHERE e.id_entrega = ?");
+$stmtInfo->bind_param("i", $id_entrega);
+$stmtInfo->execute();
+$info = $stmtInfo->get_result()->fetch_assoc();
+$stmtInfo->close();
+
+if (!$info) {
+    echo json_encode(['status' => 'error', 'message' => 'Archivo no encontrado.']); exit();
 }
 
-asegurarTablaNotificaciones($conexion);
-
-$stmt = $conexion->prepare("SELECT id_entrega, matricula_alumno, nombre_archivo_subido, link_google_drive FROM entregas WHERE id_entrega = ?");
-$stmt->bind_param("i", $idEntrega);
-$stmt->execute();
-$res = $stmt->get_result();
-$entrega = $res->fetch_assoc();
-$stmt->close();
-
-if (!$entrega) {
-    http_response_code(404);
-    echo json_encode(['status' => 'error', 'message' => 'No se encontro la entrega solicitada.']);
-    exit();
+// Convertir nomenclatura al correo para el alumno
+$cuatrimestreFormat = $info['cuatrimestre_subido'];
+if (strpos($cuatrimestreFormat, '6to') !== false || strpos($cuatrimestreFormat, '6º') !== false) {
+    $cuatrimestreFormat = '6º cuatrimestre (Técnico Superior Universitario)';
+} elseif (strpos($cuatrimestreFormat, '11vo') !== false || strpos($cuatrimestreFormat, '10º') !== false) {
+    $cuatrimestreFormat = '10º cuatrimestre (Ingeniería/Licenciatura)';
 }
 
-$link = $entrega['link_google_drive'];
-if (!empty($link) && preg_match('/\/d\/(.*?)\//', $link, $coincidencias) && isset($coincidencias[1])) {
-    try {
-        $client = new Google\Client();
-        $client->setApplicationName('ProyectoUSB Uploader');
-        $client->setScopes(Google\Service\Drive::DRIVE_FILE);
-        $client->setAuthConfig(__DIR__ . '/../client_secret.json');
-        $client->setAccessType('offline');
+$motivo_final = ($motivo_select === 'otro') ? $motivo_otro : str_replace('_', ' ', ucfirst($motivo_select));
+$asunto = "Documento Rechazado: " . $cuatrimestreFormat;
+$mensaje_db = "Tu memoria técnica ($cuatrimestreFormat) ha sido rechazada. Motivo: $motivo_final. Por favor realiza las correcciones y vuelve a subir el documento.";
 
-        $tokenPath = __DIR__ . '/token.json';
-        if (file_exists($tokenPath)) {
-            $accessToken = json_decode(file_get_contents($tokenPath), true);
-            $client->setAccessToken($accessToken);
-            if ($client->isAccessTokenExpired()) {
-                $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
-                file_put_contents($tokenPath, json_encode($client->getAccessToken()));
-            }
+$stmtDel = $conexion->prepare("DELETE FROM entregas WHERE id_entrega = ?");
+$stmtDel->bind_param("i", $id_entrega);
+$stmtDel->execute();
+$stmtDel->close();
 
-            $driveService = new Google\Service\Drive($client);
-            $driveService->files->delete($coincidencias[1]);
-        }
-    } catch (Exception $e) {
-        // Si Drive falla, de todos modos se elimina el registro local y se avisa al alumno.
-    }
+crearNotificacion($conexion, $info['matricula_alumno'], 'eliminacion', $asunto, $motivo_final, $comentario, null, $mensaje_db);
+
+if (!empty($info['correo'])) {
+    $cuerpoHtml = "
+    <div style='font-family: Arial, sans-serif; padding: 25px; background-color: #f7fafc;'>
+        <div style='background-color: #ffffff; padding: 20px; border-radius: 8px; border-top: 5px solid #e53e3e; max-width: 600px; margin: 0 auto;'>
+            <h2 style='color: #e53e3e;'>Aviso Oficial de Rechazo de Documento</h2>
+            <p>Hola <strong>{$info['nombre_completo']}</strong>,</p>
+            <p>El Departamento de Vinculación ha revisado tu documento correspondiente al proceso de <strong>{$cuatrimestreFormat}</strong> y el estatus ha cambiado a <strong>RECHAZADO</strong> por la siguiente razón:</p>
+            <div style='background-color: #fffaf0; padding: 15px; border-left: 4px solid #dd6b20; margin: 20px 0;'>
+                <p><strong>Motivo de rechazo:</strong> {$motivo_final}</p>";
+                if(!empty($comentario)){ $cuerpoHtml .= "<p><strong>Observaciones adicionales:</strong> {$comentario}</p>"; }
+    $cuerpoHtml .= "
+            </div>
+            <p>Por favor, atiende las observaciones señaladas, realiza las correcciones necesarias y regresa a la plataforma para cargar la versión definitiva de tu documento.</p>
+            <a href='https://utmir.edu.mx/estadias.html' target='_blank' style='display: inline-block; background-color: #00a859; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 15px;'>Ir al Portal Oficial UTMiR</a>
+        </div>
+    </div>";
+    enviarCorreoGmail($info['correo'], "UTMiR: " . $asunto, $cuerpoHtml);
 }
-
-$matricula = (int)$entrega['matricula_alumno'];
-$asunto = 'Archivo eliminado por administracion';
-$mensaje = "Tu archivo {$entrega['nombre_archivo_subido']} fue eliminado por administracion. Motivo: {$motivoFinal}.";
-if ($comentarioFinal) {
-    $mensaje .= " Comentario: {$comentarioFinal}.";
-}
-if ($detalleFinal) {
-    $mensaje .= " Detalle: {$detalleFinal}.";
-}
-
-$conexion->begin_transaction();
-
-try {
-    if (!crearNotificacion($conexion, $matricula, 'eliminacion', $asunto, $motivoFinal, $comentarioFinal, $detalleFinal, $mensaje)) {
-        throw new Exception('No se pudo crear la notificacion.');
-    }
-
-    $stmtDelete = $conexion->prepare("DELETE FROM entregas WHERE id_entrega = ?");
-    $stmtDelete->bind_param("i", $idEntrega);
-    if (!$stmtDelete->execute()) {
-        throw new Exception('No se pudo eliminar la entrega.');
-    }
-    $stmtDelete->close();
-
-    $conexion->commit();
-    echo json_encode(['status' => 'success', 'message' => 'Entrega eliminada y notificacion enviada al alumno.']);
-} catch (Exception $e) {
-    $conexion->rollback();
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-}
-
-$conexion->close();
+echo json_encode(['status' => 'success', 'message' => 'Documento eliminado y correo enviado exitosamente.']);
 ?>

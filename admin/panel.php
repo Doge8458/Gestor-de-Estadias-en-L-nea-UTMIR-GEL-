@@ -37,17 +37,24 @@ $res_periodo = $conexion->query("SELECT * FROM configuracion_periodo LIMIT 1");
 $periodo_actual = $res_periodo->fetch_assoc();
 
 // Lógica del Buscador
-$busqueda = "";
-$sql = "SELECT a.matricula, a.nombre_completo, 
-               e.id_entrega, e.nombre_archivo_subido, e.cuatrimestre_subido, e.programa_educativo_subido, e.link_google_drive, e.fecha_subida 
+$busqueda = isset($_GET['q']) ? trim($_GET['q']) : '';
+
+if (!empty($busqueda)) {
+    // FILTRO AVANZADO: Busca por Matrícula, Nombre o el Título/Nombre del archivo de proyecto.
+    $busqueda_param = "%" . $busqueda . "%";
+    $query = "
+        SELECT a.*, e.id_entrega, e.fecha_subida, e.cuatrimestre_subido, e.programa_educativo_subido, e.nombre_archivo_subido, e.link_google_drive 
         FROM alumnos a 
-        LEFT JOIN entregas e ON a.matricula = e.matricula_alumno";
-
-if (isset($_GET['q']) && !empty($_GET['q'])) {
-    $busqueda = $conexion->real_escape_string($_GET['q']);
-    $sql .= " WHERE a.matricula LIKE '%$busqueda%' OR a.nombre_completo LIKE '%$busqueda%'";
+        LEFT JOIN entregas e ON a.matricula = e.matricula_alumno 
+        WHERE a.matricula LIKE ? 
+           OR a.nombre_completo LIKE ? 
+           OR e.nombre_archivo_subido LIKE ?
+        ORDER BY a.matricula DESC";
+    $stmt = $conexion->prepare($query);
+    $stmt->bind_param("sss", $busqueda_param, $busqueda_param, $busqueda_param);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+} else {
+    $query = "SELECT a.*, e.id_entrega, e.fecha_subida, e.cuatrimestre_subido, e.programa_educativo_subido, e.nombre_archivo_subido, e.link_google_drive FROM alumnos a LEFT JOIN entregas e ON a.matricula = e.matricula_alumno ORDER BY a.matricula DESC";
+    $resultado = $conexion->query($query);
 }
-
-$sql .= " ORDER BY e.fecha_subida DESC";
-$resultado = $conexion->query($sql);
-require __DIR__ . '/views/panel.view.php';

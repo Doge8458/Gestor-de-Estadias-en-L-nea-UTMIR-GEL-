@@ -14,8 +14,8 @@ $stmt->bind_param("i", $matricula_alumno);
 $stmt->execute();
 $resultado = $stmt->get_result();
 while ($fila = $resultado->fetch_assoc()) {
-    if (strpos($fila['cuatrimestre_subido'], '6to') !== false) { $entrega_tsu = $fila; }
-    if (strpos($fila['cuatrimestre_subido'], '11vo') !== false) { $entrega_ing = $fila; }
+    if (strpos($fila['cuatrimestre_subido'], '6º') !== false) { $entrega_tsu = $fila; }
+    if (strpos($fila['cuatrimestre_subido'], '10º') !== false) { $entrega_ing = $fila; }
 }
 $stmt->close();
 

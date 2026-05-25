@@ -8,55 +8,73 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="assets/css/dashboard.css">
     <style>
-        /* DISEÑO DE MENÚ INSTITUCIONAL SÓLIDO */
-        :root { --sidebar-width: 280px; --navbar-height: 70px; }
-        
-        .sidebar {
-            position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh;
-            display: flex; flex-direction: column; overflow: hidden; z-index: 1000;
-            background: var(--bg-sidebar, #111827); border-right: 1px solid var(--borde-color, #374151);
-            transition: width 0.3s ease, height 0.3s ease;
+        /* Diseño original de Barra Lateral y Fix Móvil */
+        :root { --sidebar-width: 280px; }
+        body { margin: 0; padding: 0; box-sizing: border-box; }
+        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: var(--bg-sidebar, #0B131E); border-right: 1px solid var(--borde-color, #1f2937); display: flex; flex-direction: column; z-index: 1050; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); overflow-y: auto; overflow-x: hidden; }
+        .main-content { margin-left: var(--sidebar-width); padding: 30px 4%; transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1); min-height: 100vh; display: flex; flex-direction: column; }
+        .sidebar-overlay { display: none; }
+        .mobile-header { display: none; }
+        html { scroll-behavior: smooth; }
+        .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); } 
+            .sidebar.active { transform: translateX(0); box-shadow: 5px 0 25px rgba(0,0,0,0.5); }
+            .main-content { margin-left: 0; padding-top: 90px; }
+            .mobile-header { display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 70px; background: var(--bg-sidebar, #0B131E); border-bottom: 3px solid #00a859; z-index: 1040; padding: 0 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); box-sizing: border-box;}
+            .mobile-header img { width: 40px; height: 40px; }
+            .mobile-header .logo-text { color: #fff; font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;}
+            .hamburger-btn { background: none; border: none; color: #fff; cursor: pointer; padding: 5px; }
+            .hamburger-btn svg { width: 30px; height: 30px; stroke: currentColor; }
+            .sidebar-overlay.active { display: block; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); z-index: 1045; animation: fadeIn 0.3s ease; }
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+            .top-row, .status-grid, .content-grid, .countdown-box { flex-direction: column; width: 100%; }
+            .status-grid, .content-grid { grid-template-columns: 1fr; }
+            .countdown-box .cd-item { width: 100%; box-sizing: border-box; }
+            
+            /* Corrección del Video Móvil */
+            .video-thumb-card { width: 100% !important; flex: 1; box-sizing: border-box; margin-bottom: 20px; }
         }
-        .main-content { margin-left: var(--sidebar-width); transition: margin 0.3s ease, padding 0.3s ease; }
-        .sidebar-actions { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; transition: all 0.3s ease; padding-bottom: 20px;}
-        .profile-card, .mascot-container { transition: opacity 0.2s ease; opacity: 1; }
-        
-        body.is-scrolled .sidebar {
-            width: 100%; height: var(--navbar-height);
-            background: #0f172a; /* Azul marino institucional */
-            border-right: none; border-bottom: 3px solid #00a859; /* Identidad UTMiR */
-            flex-direction: row; justify-content: space-between; align-items: center;
-            padding: 0 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        body.is-scrolled .main-content { margin-left: 0; padding-top: var(--navbar-height); }
-        body.is-scrolled .profile-card, body.is-scrolled .mascot-container { display: none; }
-        
-        body.is-scrolled .brand-logo { flex-direction: row; align-items: center; margin: 0; padding: 0; }
-        body.is-scrolled .brand-logo img { width: 35px; height: 35px; margin: 0 10px 0 0; }
-        body.is-scrolled .brand-logo span { color: #ffffff; font-weight: 700; font-size: 1.1rem; }
-        
-        body.is-scrolled .sidebar-actions { flex-direction: row; margin-top: 0; padding-bottom: 0; width: auto; gap: 20px; }
-        body.is-scrolled .btn-logout { padding: 8px 20px; background-color: #e67e22; border-radius: 4px; display: flex; align-items: center; gap: 8px; font-weight: 600; color: white;}
-        body.is-scrolled .btn-logout svg { display: none; }
-        body.is-scrolled .btn-logout:hover { background-color: #d67118; }
-        
+
+        .video-thumb-card { background: var(--bg-card, #1f2937); border: 1px solid var(--borde-color, #374151); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; text-align: center; width: 140px; flex-shrink: 0; }
+        .video-thumb-card:hover { border-color: #00a859; transform: translateY(-3px); }
+        .video-thumb-card svg { stroke: #00a859; margin-bottom: 8px; }
+        .sidebar-bottom { margin-top: auto; padding-bottom: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px;}
+        .notification-fab { display: none !important; } 
+
         .notif-modal-list { max-height: 55vh; overflow-y: auto; padding-right: 10px; }
         .notif-modal-list::-webkit-scrollbar { width: 6px; }
         .notif-modal-list::-webkit-scrollbar-thumb { background: #00a859; border-radius: 4px; }
-        
-        .video-thumb-card {
-            background: var(--bg-card, #1f2937); border: 1px solid var(--borde-color, #374151);
-            border-radius: 8px; padding: 15px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;
-            text-align: center; width: 140px; flex-shrink: 0;
-        }
-        .video-thumb-card:hover { border-color: #00a859; transform: translateY(-3px); }
-        .video-thumb-card svg { stroke: #00a859; margin-bottom: 8px; }
+        .notif-date-group { margin-bottom: 20px; }
+        .notif-date-header { font-size: 0.8rem; color: var(--texto-mutado); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid var(--borde-color); padding-bottom: 5px; }
+        .notif-modal-item { border: 1px solid var(--borde-color); border-radius: 8px; margin-bottom: 10px; padding: 15px; background: var(--bg-card); cursor: pointer; transition: 0.3s; border-left: 4px solid #00a859; }
+        .notif-modal-item.notif-unread { border-left: 4px solid var(--utmir-naranja); background: rgba(231, 77, 35, 0.05); }
+        .notif-modal-item.notif-read-state { border-left: 4px solid var(--texto-mutado); opacity: 0.7; background: transparent; } 
+        .notif-modal-item:hover { background: var(--bg-input); }
+        .notif-preview { display: flex; justify-content: space-between; align-items: center; }
+        .notif-body { display: none; padding-top: 15px; margin-top: 15px; border-top: 1px dashed var(--borde-color); font-size: 0.9rem; color: var(--texto-claro); line-height: 1.6; }
+        .notif-body.expanded { display: block; animation: fadeIn 0.3s ease; }
     </style>
 </head>
 <body>
 
-    <aside class="sidebar">
+    <header class="mobile-header">
+        <div class="logo-text"><img src="assets/images/utmir_logo_2026.png" alt="UTMIR Logo"> Portal Estadías</div>
+        <button class="hamburger-btn" id="btnToggleSidebarAlumno">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebarOverlayAlumno"></div>
+
+    <aside class="sidebar" id="mainSidebarAlumno">
         <div class="brand-logo">
             <img src="assets/images/utmir_logo_2026.png" alt="UTMIR Logo" class="sidebar-logo-img">
             <span>Portal Estadías</span>
@@ -68,7 +86,7 @@
         </div>
         <div class="mascot-container"><img src="assets/images/robin_utmir.png" alt="Robin Mascota UTMIR" class="mascot-img"></div>
         
-        <div class="sidebar-actions">
+        <div class="sidebar-bottom">
             <div class="theme-switch-wrapper">
                 <label class="theme-switch" for="checkbox-pc">
                     <input type="checkbox" id="checkbox-pc" class="theme-checkbox" />
@@ -78,21 +96,21 @@
                     </div>
                 </label>
             </div>
-            <a href="api/logout.php" class="btn-logout">
+            <a href="api/logout.php" class="btn-logout" style="width: 80%; justify-content: center;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                 <span>Cerrar Sesión</span>
             </a>
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content fade-in-up">
         
         <div class="hero-banner" style="text-align: center; margin-bottom: 30px;">
             <h1 class="hero-title">Recepción de Documentos Oficiales</h1>
             <p class="hero-subtitle">Bienvenido(a), <b class="text-on-dark"><?php echo htmlspecialchars($nombre_alumno); ?></b>. Este portal institucional está destinado a la carga exclusiva de las versiones finales y autorizadas de las memorias de estadía.</p>
         </div>
         
-        <div class="top-row" style="display: flex; gap: 20px; align-items: stretch; margin-bottom: 20px; flex-wrap: wrap;">
+        <div class="top-row" style="display: flex; gap: 20px; align-items: stretch; margin-bottom: 20px;">
             
             <div class="video-thumb-card" onclick="document.getElementById('videoModal').classList.add('active'); document.getElementById('btnCerrarVideo').classList.remove('is-hidden');">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
@@ -113,7 +131,7 @@
                                 <span><?php echo htmlspecialchars(strlen($notificacion['mensaje']) > 110 ? substr($notificacion['mensaje'], 0, 110) . '...' : $notificacion['mensaje']); ?></span>
                             </div>
                         <?php endforeach; ?>
-                        <div style="text-align: center; color: #00a859; font-size: 0.85rem; margin-top: 10px; font-weight: 600;">Clic para abrir historial</div>
+                        <div style="text-align: center; color: #00a859; font-size: 0.85rem; margin-top: 10px; font-weight: 600;">Clic para abrir historial completo</div>
                     <?php else: ?>
                         <div class="notif-item">
                             <span class="notif-date">Mensaje Automático - Sistema Activo</span>
@@ -131,27 +149,25 @@
                     Periodo de Recepción</h3>
                     <p>Mantente al tanto de la fecha límite para la carga de tu memoria. La plataforma se cerrará automáticamente al finalizar el contador.</p>
                 </div>
-                
-                <div class="countdown-box" style="margin-top: 20px; display: flex; gap: 20px; justify-content: flex-start; flex-wrap: wrap;">
-                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; min-width: 120px; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                <div class="countdown-box" style="margin-top: 20px; display: flex; gap: 20px; justify-content: flex-start;">
+                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; flex: 1; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                         <span class="cd-number" id="cd-dias" style="font-size: 3.5rem; font-weight: 800; color: #10b981; line-height: 1;">00</span>
                         <span class="cd-label" style="font-size: 1rem; color: #9ca3af; margin-top: 10px; letter-spacing: 2px; font-weight: 600;">DÍAS</span>
                     </div>
-                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; min-width: 120px; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; flex: 1; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                         <span class="cd-number" id="cd-horas" style="font-size: 3.5rem; font-weight: 800; color: #10b981; line-height: 1;">00</span>
                         <span class="cd-label" style="font-size: 1rem; color: #9ca3af; margin-top: 10px; letter-spacing: 2px; font-weight: 600;">HORAS</span>
                     </div>
-                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; min-width: 120px; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; flex: 1; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                         <span class="cd-number" id="cd-mins" style="font-size: 3.5rem; font-weight: 800; color: #10b981; line-height: 1;">00</span>
                         <span class="cd-label" style="font-size: 1rem; color: #9ca3af; margin-top: 10px; letter-spacing: 2px; font-weight: 600;">MINS</span>
                     </div>
-                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; min-width: 120px; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; flex: 1; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                         <span class="cd-number" id="cd-segs" style="font-size: 3.5rem; font-weight: 800; color: #10b981; line-height: 1;">00</span>
                         <span class="cd-label" style="font-size: 1rem; color: #9ca3af; margin-top: 10px; letter-spacing: 2px; font-weight: 600;">SEGS</span>
                     </div>
                 </div>
             </div>
-            
             <div class="calendario-wrapper"><input type="text" id="calendario_alumno" class="hidden-input"></div>
         </div>
 
@@ -254,7 +270,7 @@
                             <div class="file-drop-area" id="dropArea">
                                 <svg class="anim-float" id="uploadIcon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--texto-mutado)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                                 <span class="file-msg" id="fileNameDisplay">Haga clic o arrastre el archivo aquí</span>
-                                <span class="file-submsg">Límite establecido: 5MB</span>
+                                <span class="file-submsg">Límite establecido: 30MB</span>
                                 <input type="file" name="memoria_archivo" id="archivo_pdf" accept=".pdf" required>
                             </div>
                         </div>
@@ -270,7 +286,7 @@
                     </div>
                     <ul class="info-list">
                         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg><b>Formato Estricto:</b> El sistema está configurado para admitir únicamente archivos con la extensión <code>.pdf</code>.</li>
-                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg><b>Nomenclatura Requerida:</b> Es imperativo nombrar el archivo correctamente antes de la carga institucional: <span class="code-snippet">Matricula_Nombres_Carrera_Cuatrimestre.pdf</span></li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg><b>Nomenclatura Requerida:</b> Es imperativo nombrar el archivo correctamente antes de la carga institucional.</li>
                         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg><b>Documento Definitivo:</b> Asegúrate de cargar la versión final con firmas. No se permiten modificaciones posteriores sin autorización.</li>
                     </ul>
                 </div>
@@ -278,7 +294,7 @@
             </div>
         <?php endif; ?>
 
-        <footer class="dashboard-footer">
+        <footer class="dashboard-footer" style="margin-top: auto;">
             <div class="footer-bottom">
             PROYECTA • INNOVA • ALCANZA<br><br>
             © <span id="currentYear"></span>. Universidad Tecnológica de Mineral de la Reforma. Todos los derechos reservados.
@@ -290,32 +306,62 @@
     <div class="modal-overlay notification-modal <?php echo ($notificaciones_sin_leer > 0) ? 'active' : ''; ?>" id="notificationsModal">
         <div class="modal-box notification-modal-box">
             <div class="notif-modal-header">
-                <h3>Notificaciones de administración</h3>
+                <h3>Historial de Notificaciones</h3>
                 <button type="button" class="notif-close" id="btnCloseNotifications" title="Cerrar" onclick="document.getElementById('notificationsModal').classList.remove('active');">x</button>
             </div>
+            
             <div class="notif-modal-list" id="modalListContainer">
-                <?php if (!empty($notificaciones_alumno)): ?>
-                    <?php foreach ($notificaciones_alumno as $notificacion): ?>
-                        <article class="notif-modal-item <?php echo ((int)$notificacion['leida'] === 0) ? 'notif-unread' : ''; ?>">
-                            <div class="notif-modal-meta">
-                                <span><?php echo htmlspecialchars(date("d/m/Y h:i A", strtotime($notificacion['fecha_creacion']))); ?></span>
-                                <span><?php echo htmlspecialchars($notificacion['tipo'] === 'eliminacion' ? 'Archivo rechazado' : 'Mensaje oficial'); ?></span>
-                            </div>
-                            <h4><?php echo htmlspecialchars($notificacion['asunto']); ?></h4>
-                            <?php if (!empty($notificacion['motivo'])): ?>
-                                <p><b>Motivo:</b> <?php echo htmlspecialchars($notificacion['motivo']); ?></p>
-                            <?php endif; ?>
-                            <p><?php echo nl2br(htmlspecialchars($notificacion['mensaje'])); ?></p>
-                            <?php if (!empty($notificacion['comentario'])): ?>
-                                <p><b>Observaciones:</b> <?php echo nl2br(htmlspecialchars($notificacion['comentario'])); ?></p>
-                            <?php endif; ?>
-                        </article>
+                <?php 
+                $grouped_notifs = [];
+                if (!empty($notificaciones_alumno)) {
+                    foreach($notificaciones_alumno as $notif) {
+                        $fecha = date("d/m/Y", strtotime($notif['fecha_creacion']));
+                        $grouped_notifs[$fecha][] = $notif;
+                    }
+                }
+                ?>
+                <?php if (!empty($grouped_notifs)): ?>
+                    <?php foreach ($grouped_notifs as $fecha => $notifs_dia): ?>
+                        <div class="notif-date-group">
+                            <div class="notif-date-header"><?php echo htmlspecialchars($fecha); ?></div>
+                            <?php foreach ($notifs_dia as $notificacion): ?>
+                                <article class="notif-modal-item <?php echo ((int)$notificacion['leida'] === 0) ? 'notif-unread' : 'notif-read-state'; ?>" onclick="toggleNotif(<?php echo $notificacion['id_notificacion']; ?>, this)">
+                                    <div class="notif-preview">
+                                        <div style="flex:1;">
+                                            <div class="notif-modal-meta">
+                                                <span><?php echo htmlspecialchars(date("h:i A", strtotime($notificacion['fecha_creacion']))); ?></span>
+                                                <span style="color:var(--utmir-naranja);"><?php echo htmlspecialchars($notificacion['tipo'] === 'eliminacion' ? 'Archivo rechazado' : 'Mensaje oficial'); ?></span>
+                                            </div>
+                                            <h4 style="margin:5px 0 0 0; color:var(--texto-principal); font-size:0.95rem;"><?php echo htmlspecialchars($notificacion['asunto']); ?></h4>
+                                        </div>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--texto-mutado);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </div>
+                                    <div class="notif-body">
+                                        <?php if (!empty($notificacion['motivo'])): ?>
+                                            <p><b>Motivo:</b> <?php echo htmlspecialchars($notificacion['motivo']); ?></p>
+                                        <?php endif; ?>
+                                        <p><?php echo nl2br(htmlspecialchars($notificacion['mensaje'])); ?></p>
+                                        <?php if (!empty($notificacion['comentario'])): ?>
+                                            <p><b>Observaciones:</b> <?php echo nl2br(htmlspecialchars($notificacion['comentario'])); ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <p class="message-text">No tienes notificaciones pendientes.</p>
+                    <p class="message-text" style="color:var(--texto-mutado); text-align:center;">No tienes notificaciones en tu historial.</p>
                 <?php endif; ?>
             </div>
-            <button class="btn-ok" id="btnMarkNotifications">Entendido, marcar como visto y limpiar panel</button>
+            <button class="btn-ok" style="background:var(--bg-input); border:1px solid var(--borde-color); color:var(--texto-claro); margin-top:15px;" onclick="clearNotifHistory()">Limpiar todo el Historial</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="loadingModal">
+        <div class="modal-box">
+            <svg class="anim-float modal-icon-spaced" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--utmir-verde)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg>
+            <h3 class="modal-title-loading" style="color: white; margin-top:15px;">Procesando Documento...</h3>
+            <p class="modal-text-muted" style="color: var(--texto-mutado);">Analizando texto y transfiriendo a la nube institucional.</p>
         </div>
     </div>
 
@@ -347,27 +393,90 @@
     <script src="assets/js/dashboard-video.js"></script>
 
     <script>
-        // Diseño de menú sólido institucional superior al scrollear
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) { document.body.classList.add('is-scrolled'); } 
-            else { document.body.classList.remove('is-scrolled'); }
+        // SCRIPT PARA MENÚ HAMBURGUESA MÓVIL ALUMNO
+        const btnToggleSidebar = document.getElementById('btnToggleSidebarAlumno');
+        const mainSidebar = document.getElementById('mainSidebarAlumno');
+        const sidebarOverlay = document.getElementById('sidebarOverlayAlumno');
+
+        function toggleSidebar() {
+            const isActive = mainSidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+            
+            btnToggleSidebar.innerHTML = isActive 
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+        }
+
+        btnToggleSidebar?.addEventListener('click', toggleSidebar);
+        sidebarOverlay?.addEventListener('click', toggleSidebar);
+
+        // --- FIX SUBIDA DE ARCHIVOS ---
+        // Intercepta el formulario para evitar que la página se reinicie y lo envía por fetch
+        document.getElementById('uploadForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('.btn-submit');
+            btn.innerText = 'Subiendo...';
+            btn.disabled = true;
+            document.getElementById('loadingModal').classList.add('active'); // Mostrar modal de carga
+            
+            try {
+                const formData = new FormData(this);
+                const response = await fetch('api/upload.php', { method: 'POST', body: formData });
+                const data = await response.json();
+                
+                document.getElementById('loadingModal').classList.remove('active');
+                
+                if(data.status === 'success') {
+                    alert('Documento procesado y guardado correctamente.');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo procesar la entrega.'));
+                    btn.innerText = 'Procesar Entrega';
+                    btn.disabled = false;
+                }
+            } catch(err) {
+                document.getElementById('loadingModal').classList.remove('active');
+                alert('Error crítico de conexión al servidor.');
+                btn.innerText = 'Procesar Entrega';
+                btn.disabled = false;
+            }
         });
 
-        // Limpieza visual de notificaciones
-        document.getElementById('btnMarkNotifications')?.addEventListener('click', () => {
-            const badge = document.getElementById('inPanelBadge');
-            if (badge) badge.style.display = 'none';
+        // --- FIX NOTIFICACIONES MÓVILES ---
+        function toggleNotif(id, element) {
+            const body = element.querySelector('.notif-body');
+            body.classList.toggle('expanded');
             
-            document.getElementById('modalListContainer').innerHTML = '<p class="message-text" style="color:#00a859; font-weight:600;">Historial limpio. No tienes notificaciones pendientes.</p>';
-            
-            document.getElementById('previewNotifContainer').innerHTML = `
-                <div class="notif-item">
-                    <span class="notif-date">Mensaje Automático - Sistema Activo</span>
-                    Mantente al tanto. Las notificaciones han sido marcadas como leídas y archivadas.
-                </div>`;
-            
-            document.getElementById('notificationsModal').classList.remove('active');
-        });
+            if(element.classList.contains('notif-unread')) {
+                fetch('api/marcar_notificaciones.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'accion=marcar_una&id_notificacion=' + id
+                }).then(() => {
+                    element.classList.remove('notif-unread');
+                    element.classList.add('notif-read-state');
+                    const badge = document.getElementById('inPanelBadge');
+                    if (badge) badge.style.display = 'none';
+                });
+            }
+        }
+
+        function clearNotifHistory() {
+            if(confirm('¿Estás seguro de que deseas eliminar permanentemente todo tu historial?')) {
+                fetch('api/marcar_notificaciones.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'accion=limpiar'
+                }).then(() => {
+                    document.getElementById('modalListContainer').innerHTML = '<p class="message-text" style="color:var(--texto-mutado); text-align:center;">Historial limpio. No tienes notificaciones pendientes.</p>';
+                    document.getElementById('previewNotifContainer').innerHTML = `
+                        <div class="notif-item">
+                            <span class="notif-date">Mensaje Automático - Sistema Activo</span>
+                            Mantente al tanto. Tu historial ha sido limpiado.
+                        </div>`;
+                });
+            }
+        }
     </script>
 </body>
 </html>

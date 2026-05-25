@@ -1,34 +1,46 @@
 <?php
-// Agrupación de Resultados y Motor de Búsqueda
 $alumnos_agrupados = [];
 $busqueda_activa = isset($_GET['q']) ? trim($_GET['q']) : '';
 
-// Función para resaltar resultados con animación amarilla
-function resaltaBusqueda($texto, $busqueda) {
-    if (empty($busqueda)) return htmlspecialchars($texto);
-    $pattern = '/' . preg_quote($busqueda, '/') . '/i';
-    return preg_replace($pattern, '<mark class="highlight-anim">$0</mark>', htmlspecialchars($texto));
+if (!function_exists('resaltaBusqueda')) {
+    function resaltaBusqueda($texto, $busqueda) {
+        if (empty($busqueda) || empty($texto)) return htmlspecialchars($texto);
+        $pattern = '/' . preg_quote($busqueda, '/') . '/i';
+        return preg_replace($pattern, '<mark class="highlight-anim">$0</mark>', htmlspecialchars($texto));
+    }
 }
 
-// Convertir nomenclatura antigua a la oficial
-function formatearCuatrimestre($cuatrimestre) {
-    if (strpos($cuatrimestre, '6to') !== false || strpos($cuatrimestre, '6º') !== false) {
-        return '6º cuatrimestre (Técnico Superior Universitario)';
-    } elseif (strpos($cuatrimestre, '11vo') !== false || strpos($cuatrimestre, '10º') !== false) {
-        return '10º cuatrimestre (Ingeniería/Licenciatura)';
+if (!function_exists('extractSnippet')) {
+    function extractSnippet($text, $keyword) {
+        if (empty($text) || empty($keyword)) return '';
+        $pos = mb_stripos($text, $keyword);
+        if ($pos !== false) {
+            $start = max(0, $pos - 60);
+            $snippet = mb_substr($text, $start, 150);
+            $prefix = ($start > 0) ? '...' : '';
+            $suffix = (mb_strlen($text) > ($start + 150)) ? '...' : '';
+            return $prefix . resaltaBusqueda($snippet, $keyword) . $suffix;
+        }
+        return '';
     }
-    return htmlspecialchars($cuatrimestre);
+}
+
+if (!function_exists('formatearCuatrimestre')) {
+    function formatearCuatrimestre($cuatrimestre) {
+        if (strpos($cuatrimestre, '6to') !== false || strpos($cuatrimestre, '6º') !== false) {
+            return '6º cuatrimestre (Técnico Superior Universitario)';
+        } elseif (strpos($cuatrimestre, '11vo') !== false || strpos($cuatrimestre, '10º') !== false) {
+            return '10º cuatrimestre (Ingeniería/Licenciatura)';
+        }
+        return htmlspecialchars($cuatrimestre);
+    }
 }
 
 if (isset($resultado) && $resultado->num_rows > 0) {
     while ($fila = $resultado->fetch_assoc()) {
         $mat = $fila['matricula'];
         if (!isset($alumnos_agrupados[$mat])) {
-            $alumnos_agrupados[$mat] = [
-                'matricula' => $mat,
-                'nombre_completo' => $fila['nombre_completo'],
-                'entregas' => []
-            ];
+            $alumnos_agrupados[$mat] = ['matricula' => $mat, 'nombre_completo' => $fila['nombre_completo'], 'entregas' => []];
         }
         if (!empty($fila['id_entrega'])) {
             $alumnos_agrupados[$mat]['entregas'][] = $fila;
@@ -46,63 +58,42 @@ if (isset($resultado) && $resultado->num_rows > 0) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="../assets/css/admin-panel.css">
     <style>
-        /* DISEÑO DE MENÚ INSTITUCIONAL SÓLIDO (Sin Glassmorphism) */
-        :root { --sidebar-width: 280px; --navbar-height: 70px; }
+        /* ESTILOS DEL FILTRO BANDCAMP */
+        .bandcamp-search-container { background: var(--bg-card); padding: 30px; border-radius: 16px; margin-bottom: 20px; border: 1px solid var(--borde-sutil); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .bandcamp-search-bar { display: flex; align-items: center; background: var(--bg-input); border: 2px solid var(--borde-sutil); border-radius: 30px; padding: 5px 10px 5px 25px; transition: 0.3s; }
+        .bandcamp-search-bar:focus-within { border-color: var(--utmir-verde); box-shadow: 0 0 0 4px rgba(0, 168, 107, 0.1); }
+        .bandcamp-search-bar input { flex: 1; background: transparent; border: none; color: var(--blanco); font-size: 16px; outline: none; font-family: 'Montserrat', sans-serif; padding: 12px 0; }
+        .bandcamp-search-bar button { background: var(--utmir-verde); color: white; border: none; padding: 12px 30px; border-radius: 25px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .bandcamp-search-bar button:hover { transform: scale(1.05); }
         
-        .sidebar {
-            position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh;
-            display: flex; flex-direction: column; overflow: hidden; z-index: 1000;
-            background: var(--bg-sidebar, #111827); border-right: 1px solid var(--borde-color, #374151);
-            transition: width 0.3s ease, height 0.3s ease;
-        }
-        .main-content {
-            margin-left: var(--sidebar-width);
-            transition: margin 0.3s ease, padding 0.3s ease;
-        }
-        .sidebar-actions { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; transition: all 0.3s ease; padding-bottom: 20px; }
-        .profile-card { transition: opacity 0.2s ease; opacity: 1; }
-        
-        /* Estado Scrolled: Barra superior sólida y formal */
-        body.is-scrolled .sidebar {
-            width: 100%; height: var(--navbar-height);
-            background: #0f172a; /* Azul marino institucional oscuro */
-            border-right: none; border-bottom: 3px solid #00a859; /* Identidad UTMiR */
-            flex-direction: row; justify-content: space-between; align-items: center;
-            padding: 0 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        body.is-scrolled .main-content { margin-left: 0; padding-top: var(--navbar-height); }
-        body.is-scrolled .profile-card { display: none; }
-        body.is-scrolled .brand-logo { flex-direction: row; align-items: center; margin: 0; padding: 0; }
-        body.is-scrolled .brand-logo h1 { color: #00a859; font-size: 1.5rem; margin: 0 10px 0 0; }
-        body.is-scrolled .brand-logo span { color: #ffffff; font-weight: 600; font-size: 1.1rem; }
-        body.is-scrolled .sidebar-actions { flex-direction: row; margin-top: 0; padding-bottom: 0; width: auto; gap: 20px; }
-        body.is-scrolled .btn-logout { padding: 8px 20px; background-color: #e67e22; border-radius: 4px; }
-        body.is-scrolled .btn-logout:hover { background-color: #d67118; }
-        
-        /* HOVER NARANJA PARA ARCHIVOS */
-        a.file-link { transition: all 0.2s ease; color: #00a859; font-weight: 600; text-decoration: none; }
-        a.file-link:hover { color: #e67e22 !important; text-decoration: underline !important; }
-        
-        /* ANIMACIÓN DE RESALTADO DE BÚSQUEDA (ESTILO MARCADOR AMARILLO) */
-        mark.highlight-anim {
-            background: linear-gradient(to right, rgba(241, 196, 15, 0) 50%, rgba(241, 196, 15, 0.8) 50%);
-            background-size: 200% 100%; background-position: 100% 0;
-            animation: highlight-slide 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            color: #000; padding: 0 4px; border-radius: 2px; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
+        .active-tags { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .filter-tag { background: var(--utmir-naranja); color: white; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px; animation: scaleIn 0.3s ease; }
+        .filter-tag a { color: white; text-decoration: none; background: rgba(0,0,0,0.2); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; transition: 0.3s;}
+        .filter-tag a:hover { background: rgba(0,0,0,0.5); }
+        @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* ANIMACIÓN DE TEXTO RESALTADO TIPO ESCÁNER */
+        mark.highlight-anim { background: linear-gradient(to right, rgba(241, 196, 15, 0) 50%, rgba(241, 196, 15, 0.85) 50%); background-size: 200% 100%; background-position: 100% 0; animation: highlight-slide 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; color: #000; padding: 2px 4px; border-radius: 3px; font-weight: 800; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         @keyframes highlight-slide { to { background-position: 0 0; } }
-        
-        .admin-input, .admin-textarea { color: var(--texto-principal, #fff); background: var(--bg-input, #1f2937); border: 1px solid var(--borde-color, #374151); }
-        .detail-row { display: none; } /* Oculto por defecto estrictamente */
+        .pdf-snippet { margin-top: 15px; width: 100%; font-size: 0.85rem; color: var(--texto-claro); background: rgba(0,0,0,0.15); padding: 15px; border-radius: 8px; border-left: 4px solid var(--utmir-verde); font-family: monospace; line-height: 1.6; }
     </style>
 </head>
 <body>
 
-    <aside class="sidebar">
+    <header class="mobile-header">
+        <div class="logo-text">UTMIR<span>Admin</span></div>
+        <button class="hamburger-btn" id="btnToggleSidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <aside class="sidebar" id="mainSidebar">
         <div class="brand-logo"><h1>UTMIR</h1><span>Panel Administrador</span></div>
         <div class="profile-card"><div class="profile-avatar">AD</div><h2>Administrador</h2><div class="matricula-badge">Depto. Vinculación</div></div>
         
-        <div class="sidebar-actions">
+        <div class="sidebar-bottom">
             <div class="theme-switch-wrapper">
                 <label class="theme-switch" for="checkbox-pc">
                     <input type="checkbox" id="checkbox-pc" class="theme-checkbox" />
@@ -112,20 +103,19 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                     </div>
                 </label>
             </div>
-            <a href="../api/logout_admin.php" class="btn-logout">Cerrar Sesión</a>
+            <a href="../api/logout_admin.php" class="btn-logout" style="width: 80%; text-align: center;">Cerrar Sesión</a>
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content fade-in-up">
         
         <div class="hero-banner" style="text-align: center; margin-bottom: 30px;">
             <h1 class="hero-title">Gestión de Expedientes</h1>
             <p class="hero-subtitle">Visualiza, busca y administra los documentos oficiales subidos por los estudiantes.</p>
         </div>
-        
-        <div class="top-row" style="display: flex; gap: 20px; align-items: stretch; margin-bottom: 20px; flex-wrap: wrap;">
-            
-            <div class="admin-message-card" style="flex: 2; min-width: 350px; margin-bottom: 0;">
+
+        <div class="top-row" style="display: flex; gap: 20px; align-items: stretch; margin-bottom: 20px;">
+            <div class="admin-message-card" style="flex: 2; min-width: 300px; margin-bottom: 0;">
                 <div class="admin-message-copy" style="margin-bottom: 15px;">
                     <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.1rem; margin-bottom: 5px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--utmir-naranja)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -145,20 +135,18 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                     </div>
                 </form>
             </div>
-
             <div class="periodo-modulo" style="flex: 1; min-width: 250px; margin-bottom: 0; border-left: 4px solid #3498db; display: flex; flex-direction: column; justify-content: space-between;">
                 <div class="periodo-info">
                     <h3 style="color: #3498db; display: flex; align-items: center; gap: 8px; font-size: 1rem;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                         Programador de Notificaciones
                     </h3>
-                    <p style="margin-top: 10px; font-size: 0.85rem; color: var(--texto-mutado);">Define el periodo en el que el sistema enviará recordatorios masivos por correo.</p>
+                    <p style="margin-top: 10px; font-size: 0.85rem; color: var(--texto-mutado);">Define el periodo en el que el sistema enviará recordatorios masivos por correo a los alumnos con entregas pendientes.</p>
                 </div>
                 <div class="periodo-actions" style="margin-top: 20px;">
                     <button class="btn-action-small periodo-btn" style="background-color: #3498db; color: white; width: 100%;" id="btnModificarNotificaciones">Configurar Envíos</button>
                 </div>
             </div>
-
         </div>
 
         <div class="periodo-modulo" style="margin-bottom: 20px;">
@@ -180,12 +168,23 @@ if (isset($resultado) && $resultado->num_rows > 0) {
             <div class="calendario-wrapper"><input type="text" id="calendario_admin_preview" class="hidden-input"></div>
         </div>
 
-        <div class="search-container">
-            <form action="" method="GET" class="search-form">
-                <input type="text" name="q" class="search-input" placeholder="Análisis profundo: Buscar por Matrícula, Nombre, Título de Proyecto o Palabras Clave..." value="<?php echo htmlspecialchars($busqueda_activa); ?>">
-                <button type="submit" class="btn-search">Buscar</button>
-                <?php if(!empty($busqueda_activa)): ?><a href="panel.php" class="btn-search btn-search-clear">Limpiar Filtro</a><?php endif; ?>
+        <div class="bandcamp-search-container">
+            <form action="" method="GET">
+                <div class="bandcamp-search-bar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--texto-mutado)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 15px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" name="q" placeholder="Filtro Analítico: Matrículas o Palabras Clave dentro del PDF..." value="<?php echo htmlspecialchars($busqueda_activa); ?>">
+                    <button type="submit">Buscar</button>
+                </div>
             </form>
+            
+            <?php if(!empty($busqueda_activa)): ?>
+                <div class="active-tags">
+                    <span class="filter-tag">
+                        Filtro Activo: <?php echo htmlspecialchars($busqueda_activa); ?>
+                        <a href="panel.php" title="Limpiar filtro">✕</a>
+                    </span>
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="data-table-container">
@@ -245,7 +244,7 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                                                             <strong style="font-size: 1rem; color: var(--texto-principal);"><?php echo resaltaBusqueda($entrega['programa_educativo_subido'], $busqueda_activa); ?></strong>
                                                         </div>
                                                         <div style="flex: 2; min-width: 250px;">
-                                                            <span style="font-size: 0.75rem; color: var(--texto-mutado); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">Archivo Registrado (Análisis de Proyecto)</span>
+                                                            <span style="font-size: 0.75rem; color: var(--texto-mutado); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">Archivo Registrado</span>
                                                             <a href="<?php echo htmlspecialchars($entrega['link_google_drive']); ?>" target="_blank" class="file-link" style="font-size: 1rem; display: flex; align-items: flex-start; gap: 6px;">
                                                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top:2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                                                                 <span style="word-break: break-all;"><?php echo resaltaBusqueda($entrega['nombre_archivo_subido'], $busqueda_activa); ?></span>
@@ -253,9 +252,19 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                                                         </div>
                                                     </div>
                                                     
-                                                    <div style="flex-shrink: 0;">
+                                                    <div style="flex-shrink: 0; width: 100%; text-align: right;">
                                                         <button class="btn-action-small btn-action-delete detail-action btn-delete-entrega" style="margin: 0; padding: 10px 20px; font-size: 0.9rem;" data-id-entrega="<?php echo $entrega['id_entrega']; ?>" data-matricula="<?php echo htmlspecialchars($mat); ?>">Rechazar Documento</button>
                                                     </div>
+
+                                                    <?php 
+                                                        $snippet = extractSnippet($entrega['contenido_texto'] ?? '', $busqueda_activa);
+                                                        if (!empty($snippet)): 
+                                                    ?>
+                                                        <div class="pdf-snippet">
+                                                            <strong style="color: var(--utmir-verde); display: block; margin-bottom: 5px; font-family: 'Montserrat', sans-serif;">Coincidencia de lectura en PDF:</strong>
+                                                            "<?php echo $snippet; ?>"
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
@@ -264,7 +273,7 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="5"><div class="empty-state"><h3>No se encontraron registros</h3><p>Verifica los términos de búsqueda.</p></div></td></tr>
+                        <tr><td colspan="5"><div class="empty-state"><h3>No se encontraron registros</h3><p>Intenta con otros términos analíticos.</p></div></td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -300,7 +309,7 @@ if (isset($resultado) && $resultado->num_rows > 0) {
             <div class="txt-enable-toolbar"><button class="txt-btn-enable" id="btnHabilitarSeleccionados">Habilitar Alumnos Seleccionados</button></div>
         </div>
         
-        <footer class="dashboard-footer">
+        <footer class="dashboard-footer" style="margin-top: auto;">
             <div class="footer-bottom">
             PROYECTA • INNOVA • ALCANZA<br><br>
             © <span id="currentYear"></span>. Universidad Tecnológica de Mineral de la Reforma. Todos los derechos reservados.
@@ -377,11 +386,21 @@ if (isset($resultado) && $resultado->num_rows > 0) {
     </script>
     <script src="../assets/js/admin-panel-main.js"></script>
     <script>
-        // Diseño de transición sólida al hacer scroll
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) { document.body.classList.add('is-scrolled'); } 
-            else { document.body.classList.remove('is-scrolled'); }
-        });
+        const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+        const mainSidebar = document.getElementById('mainSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            const isActive = mainSidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+            
+            btnToggleSidebar.innerHTML = isActive 
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+        }
+
+        btnToggleSidebar?.addEventListener('click', toggleSidebar);
+        sidebarOverlay?.addEventListener('click', toggleSidebar); 
     </script>
 </body>
 </html>

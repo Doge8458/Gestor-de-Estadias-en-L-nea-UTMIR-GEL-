@@ -29,10 +29,15 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `alumnos` (
   `matricula` int(7) UNSIGNED NOT NULL,
-  `curp` varchar(255) NOT NULL,
+  `curp` varchar(500) NOT NULL,
   `nombre_completo` varchar(100) NOT NULL,
   `acreditado` tinyint(1) DEFAULT 0,
-  `video_visto` tinyint(1) DEFAULT 0
+  `video_visto` tinyint(1) DEFAULT 0,
+  `foto_perfil` varchar(255) DEFAULT NULL,
+  `programa_educativo` varchar(180) DEFAULT NULL,
+  `cuatrimestre` varchar(80) DEFAULT NULL,
+  `correo` varchar(160) DEFAULT NULL,
+  `estatus` varchar(40) DEFAULT 'activo'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

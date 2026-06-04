@@ -5,6 +5,13 @@ CREATE TABLE IF NOT EXISTS alumnos (
     matricula INT(7) UNSIGNED NOT NULL,
     curp VARCHAR(255) NOT NULL,
     nombre_completo VARCHAR(100) NOT NULL,
+    foto_perfil VARCHAR(255) DEFAULT NULL,
+    programa_educativo VARCHAR(180) DEFAULT NULL,
+    cuatrimestre VARCHAR(80) DEFAULT NULL,
+    correo VARCHAR(160) DEFAULT NULL,
+    estatus VARCHAR(40) DEFAULT 'activo',
+    acreditado TINYINT(1) DEFAULT 0,
+    video_visto TINYINT(1) DEFAULT 0,
     PRIMARY KEY (matricula)
 ) ENGINE=InnoDB;
 

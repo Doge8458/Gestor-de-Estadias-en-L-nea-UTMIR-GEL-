@@ -1,4 +1,37 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const CAREER_PAGE_SIZE = 10;
+    const sleepFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
+
+    function setStatus(element, message, type = '') {
+        if (!element) return;
+        element.textContent = message || '';
+        element.classList.toggle('admin-form-status-success', type === 'success');
+        element.classList.toggle('admin-form-status-error', type === 'error');
+    }
+
+    async function readJsonResponse(response) {
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            const start = text.indexOf('{');
+            const end = text.lastIndexOf('}');
+            if (start !== -1 && end !== -1 && end > start) {
+                return JSON.parse(text.slice(start, end + 1));
+            }
+            throw error;
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[char]));
+    }
     
     // --- TEMAS ---
     const toggleSwitches = document.querySelectorAll('.theme-checkbox');
@@ -64,6 +97,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modalNotificaciones').classList.add('active');
     });
 
+    document.getElementById('btnAbrirVideoAdmin')?.addEventListener('click', () => {
+        document.getElementById('modalVideoAdmin').classList.add('active');
+    });
+
     // --- LÓGICA DE ELIMINACIÓN ---
     document.getElementById('motivoEliminacion')?.addEventListener('change', event => {
         const esOtro = event.target.value === 'otro';
@@ -105,15 +142,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('formEnviarAviso')?.addEventListener('submit', async event => {
         event.preventDefault();
         const status = document.getElementById('avisoAdminStatus');
-        status.innerText = 'Enviando mensaje...';
+        setStatus(status, 'Enviando mensaje...');
         try {
             const response = await fetch('../api/enviar_aviso.php', { method: 'POST', body: new FormData(event.currentTarget) });
-            const data = await response.json();
-            if (data.status === 'success') {
-                status.innerText = data.message;
+            const data = await readJsonResponse(response);
+            if (response.ok && data.status === 'success') {
+                setStatus(status, data.message || 'Mensaje enviado con exito.', 'success');
                 event.currentTarget.reset();
             } else {
-                status.innerText = data.message;
+                setStatus(status, data.message || 'No se pudo enviar el mensaje.', 'error');
             }
         } catch (error) { status.innerText = 'Error de conexión.'; }
     });
@@ -131,6 +168,68 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => window.location.reload(), 1500);
             } else { status.innerText = data.message; }
         } catch (error) { status.innerText = 'Error de conexión.'; }
+    });
+
+    // --- CARPETAS DE CARRERA Y PAGINACION ---
+    const careerState = {};
+
+    function closeCareerDetails(careerId) {
+        document.querySelectorAll(`.detail-row[data-career-id="${careerId}"]`).forEach(row => {
+            row.style.display = 'none';
+        });
+        document.querySelectorAll(`.main-row[data-career-id="${careerId}"]`).forEach(row => {
+            row.classList.remove('active');
+        });
+    }
+
+    function renderCareerPage(careerId) {
+        const state = careerState[careerId];
+        if (!state) return;
+        const start = (state.page - 1) * CAREER_PAGE_SIZE;
+        const end = start + CAREER_PAGE_SIZE;
+
+        document.querySelectorAll(`.main-row[data-career-id="${careerId}"]`).forEach(row => {
+            const index = Number(row.dataset.studentIndex || 0);
+            row.style.display = state.open && index >= start && index < end ? 'table-row' : 'none';
+        });
+
+        closeCareerDetails(careerId);
+
+        const paginationRow = document.querySelector(`[data-career-pagination="${careerId}"]`);
+        if (paginationRow) {
+            paginationRow.style.display = state.open && state.pages > 1 ? 'table-row' : 'none';
+            const label = document.querySelector(`[data-career-page-label="${careerId}"]`);
+            const prev = document.querySelector(`[data-career-prev="${careerId}"]`);
+            const next = document.querySelector(`[data-career-next="${careerId}"]`);
+            if (label) label.textContent = `Pagina ${state.page} de ${state.pages}`;
+            if (prev) prev.disabled = state.page <= 1;
+            if (next) next.disabled = state.page >= state.pages;
+        }
+    }
+
+    document.querySelectorAll('[data-career-toggle]').forEach(row => {
+        const careerId = row.dataset.careerToggle;
+        const total = Number(row.dataset.totalStudents || 0);
+        careerState[careerId] = { open: false, page: 1, pages: Math.max(1, Math.ceil(total / CAREER_PAGE_SIZE)) };
+        row.addEventListener('click', () => {
+            careerState[careerId].open = !careerState[careerId].open;
+            row.classList.toggle('is-open', careerState[careerId].open);
+            row.setAttribute('aria-expanded', careerState[careerId].open ? 'true' : 'false');
+            renderCareerPage(careerId);
+        });
+        renderCareerPage(careerId);
+    });
+
+    document.querySelectorAll('[data-career-prev], [data-career-next]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            const careerId = button.dataset.careerPrev || button.dataset.careerNext;
+            const state = careerState[careerId];
+            if (!state) return;
+            state.page += button.dataset.careerPrev ? -1 : 1;
+            state.page = Math.min(Math.max(state.page, 1), state.pages);
+            renderCareerPage(careerId);
+        });
     });
 
     // --- DETALLES DE TABLA ---
@@ -188,7 +287,113 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { console.warn("Error inicializando calendarios", e); }
 
     // --- LÓGICA DE EXCEL ---
+    // --- CARGA FLUIDA DE EXCEL ---
+    const modalCargaExcel = document.getElementById('modalCargaExcel');
+    const excelProgressFill = document.getElementById('excelProgressFill');
+    const excelProgressText = document.getElementById('excelProgressText');
+    const excelLoadingTitle = document.getElementById('excelLoadingTitle');
+    const excelLoadingText = document.getElementById('excelLoadingText');
+
+    function setExcelProgress(percent, title, message) {
+        const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+        if (excelProgressFill) excelProgressFill.style.width = `${safePercent}%`;
+        if (excelProgressText) excelProgressText.textContent = `${safePercent}%`;
+        if (excelLoadingTitle && title) excelLoadingTitle.textContent = title;
+        if (excelLoadingText && message) excelLoadingText.textContent = message;
+    }
+
+    function toggleExcelLoading(show, title = 'Procesando base de datos', message = 'Preparando lectura del archivo...') {
+        if (!modalCargaExcel) return;
+        modalCargaExcel.classList.toggle('active', show);
+        if (show) setExcelProgress(5, title, message);
+    }
+
+    async function renderExcelStudents(alumnos) {
+        const tbody = document.getElementById('cuerpoTabla');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        const chunkSize = 35;
+        const total = alumnos.length;
+
+        for (let start = 0; start < total; start += chunkSize) {
+            const end = Math.min(start + chunkSize, total);
+            const rows = [];
+            for (let i = start; i < end; i++) {
+                const al = alumnos[i];
+                const nombre = al.nombre || al.nombre_completo || '';
+                const programa = al.programa || al.programa_educativo || '';
+                const correo = al.correo || al.correo_institucional || '';
+                const clave = al.clave_temporal ? '<br><small>Clave temporal: matricula</small>' : '';
+                rows.push(`<tr><td><input type="checkbox" class="chk-alumno" data-index="${i}" checked></td>
+                    <td><strong>${escapeHtml(al.matricula)}</strong>${clave}</td>
+                    <td>${escapeHtml(nombre)}</td>
+                    <td>${escapeHtml(programa)}<br><small>${escapeHtml(al.cuatrimestre || '')}</small></td>
+                    <td>${escapeHtml(correo)}</td>
+                    <td>Listo para habilitar</td></tr>`);
+            }
+            tbody.insertAdjacentHTML('beforeend', rows.join(''));
+            setExcelProgress(45 + ((end / Math.max(total, 1)) * 50), 'Preparando alumnos', `${end} de ${total} registros listos para revisar.`);
+            await sleepFrame();
+        }
+    }
+
+    document.getElementById('chkTodos')?.addEventListener('change', event => {
+        document.querySelectorAll('.chk-alumno').forEach(checkbox => {
+            checkbox.checked = event.target.checked;
+        });
+    });
+
     let alumnosCargados = [];
+    document.getElementById('formCargaExcel')?.addEventListener('submit', async event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const status = document.getElementById('excelStatusOutput');
+        setStatus(status, 'Leyendo archivo Excel...');
+        toggleExcelLoading(true, 'Leyendo base de datos', 'Esto puede tardar unos segundos si el Excel es grande.');
+        try {
+            const response = await fetch('../api/leer_excel.php', { method: 'POST', body: new FormData(event.currentTarget) });
+            setExcelProgress(38, 'Analizando registros', 'Validando columnas, carreras, matriculas y CURP.');
+            const result = await readJsonResponse(response);
+
+            if (response.ok && result.status === 'success' && Array.isArray(result.data) && result.data.length > 0) {
+                alumnosCargados = result.data;
+                document.getElementById('panelResultados').style.display = 'block';
+                await renderExcelStudents(alumnosCargados);
+                setExcelProgress(100, 'Carga lista', 'La base ya esta disponible para habilitar alumnos.');
+                setStatus(status, result.message || 'Alumnos encontrados.', 'success');
+                setTimeout(() => toggleExcelLoading(false), 650);
+            } else {
+                setStatus(status, `Error: ${result.message || 'No se encontraron alumnos.'}`, 'error');
+                toggleExcelLoading(false);
+            }
+        } catch (error) {
+            setStatus(status, 'Error de conexion o respuesta invalida al leer el Excel.', 'error');
+            toggleExcelLoading(false);
+        }
+    });
+
+    document.getElementById('btnHabilitarSeleccionados')?.addEventListener('click', async event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const button = document.getElementById('btnHabilitarSeleccionados');
+        const checkboxes = document.querySelectorAll('.chk-alumno:checked');
+        if (checkboxes.length === 0) return alert("Selecciona alumnos.");
+        button.disabled = true;
+        const seleccionados = Array.from(checkboxes).map(chk => alumnosCargados[chk.dataset.index]);
+        toggleExcelLoading(true, 'Habilitando alumnos', `Guardando ${seleccionados.length} registro(s) en la plataforma.`);
+        try {
+            const response = await fetch('../api/guardar_alumnos.php', { method: 'POST', body: JSON.stringify({ alumnos: seleccionados }) });
+            const result = await readJsonResponse(response);
+            setExcelProgress(100, 'Alumnos habilitados', result.message || 'Registros guardados.');
+            alert(result.message || 'Alumnos habilitados.');
+            window.location.reload();
+        } catch (error) {
+            alert("Error al guardar.");
+            toggleExcelLoading(false);
+            button.disabled = false;
+        }
+    });
+
     document.getElementById('archivo_excel')?.addEventListener('change', e => {
         document.getElementById('fileNameDisplay').innerText = e.target.files[0] ? e.target.files[0].name : 'Haz clic o arrastra tu archivo';
     });
@@ -205,10 +410,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tbody = document.getElementById('cuerpoTabla');
                 tbody.innerHTML = '';
                 alumnosCargados.forEach((al, i) => {
+                    const nombre = al.nombre || al.nombre_completo || '';
+                    const programa = al.programa || al.programa_educativo || '';
+                    const correo = al.correo || al.correo_institucional || '';
+                    const clave = al.clave_temporal ? '<br><small>Clave temporal: matrícula</small>' : '';
                     tbody.innerHTML += `<tr><td><input type="checkbox" class="chk-alumno" data-index="${i}" checked></td>
-                    <td><strong>${al.matricula}</strong></td><td>${al.nombre}</td><td>${al.programa}</td><td>${al.correo}</td><td>Pendiente</td></tr>`;
+                    <td><strong>${al.matricula}</strong>${clave}</td><td>${nombre}</td><td>${programa}<br><small>${al.cuatrimestre || ''}</small></td><td>${correo}</td><td>Listo para habilitar</td></tr>`;
                 });
-                status.innerText = '';
+                status.innerText = result.message || '';
                 document.getElementById('panelResultados').style.display = 'block';
             } else { status.innerText = 'Error: ' + result.message; }
         } catch (error) { status.innerText = 'Error de conexión.'; }

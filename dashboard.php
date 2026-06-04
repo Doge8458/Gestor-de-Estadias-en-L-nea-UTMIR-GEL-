@@ -6,6 +6,23 @@ $matricula_alumno = $_SESSION['matricula'];
 $nombre_alumno = $_SESSION['nombre'];
 $servidor = "localhost"; $usuario_db = "root"; $password_db = ""; $nombre_db = "portal_estadias";
 $conexion = new mysqli($servidor, $usuario_db, $password_db, $nombre_db);
+$columnaFoto = $conexion->query("SHOW COLUMNS FROM alumnos LIKE 'foto_perfil'");
+if ($columnaFoto && $columnaFoto->num_rows === 0) {
+    $conexion->query("ALTER TABLE alumnos ADD COLUMN foto_perfil VARCHAR(255) DEFAULT NULL");
+}
+foreach ([
+    'programa_educativo' => 'VARCHAR(180) DEFAULT NULL',
+    'cuatrimestre' => 'VARCHAR(80) DEFAULT NULL',
+    'correo' => 'VARCHAR(160) DEFAULT NULL',
+    'acreditado' => 'TINYINT(1) DEFAULT 0',
+    'video_visto' => 'TINYINT(1) DEFAULT 0'
+] as $columna => $definicion) {
+    $columnaSegura = $conexion->real_escape_string($columna);
+    $existeColumna = $conexion->query("SHOW COLUMNS FROM alumnos LIKE '$columnaSegura'");
+    if ($existeColumna && $existeColumna->num_rows === 0) {
+        $conexion->query("ALTER TABLE alumnos ADD COLUMN $columna $definicion");
+    }
+}
 require_once __DIR__ . '/api/notificaciones_helpers.php';
 limpiarNotificacionesVistas($conexion);
 $entrega_tsu = null; $entrega_ing = null;
@@ -31,10 +48,13 @@ $stmt_acred->close();
 // NUEVO CODIGO: Verificar si el alumno ya esta acreditado y si ya vio el video
 $acreditado = 0;
 $video_visto = 0;
-$stmt_acred = $conexion->prepare("SELECT acreditado, video_visto FROM alumnos WHERE matricula = ?");
+$foto_perfil = null;
+$programa_educativo_alumno = '';
+$cuatrimestre_alumno = '';
+$stmt_acred = $conexion->prepare("SELECT acreditado, video_visto, foto_perfil, programa_educativo, cuatrimestre FROM alumnos WHERE matricula = ?");
 $stmt_acred->bind_param("i", $matricula_alumno); 
 $stmt_acred->execute();
-$stmt_acred->bind_result($acreditado, $video_visto);
+$stmt_acred->bind_result($acreditado, $video_visto, $foto_perfil, $programa_educativo_alumno, $cuatrimestre_alumno);
 $stmt_acred->fetch();
 $stmt_acred->close();
 
@@ -68,5 +88,16 @@ $conexion->close();
 
 $yaSubioTSU = ($entrega_tsu != null);
 $yaSubioING = ($entrega_ing != null);
-$haTerminadoTodo = ($yaSubioTSU && $yaSubioING);
+
+function inferirProcesoDocumento($programa, $cuatrimestre) {
+    $texto = mb_strtolower(($programa ?? '') . ' ' . ($cuatrimestre ?? ''), 'UTF-8');
+    if (strpos($texto, 'licenciatura') !== false || strpos($texto, 'ingenier') !== false || strpos($texto, '10') !== false || strpos($texto, '11') !== false) {
+        return '10º cuatrimestre (Ingeniería/Licenciatura)';
+    }
+    return '6º cuatrimestre (Técnico Superior Universitario)';
+}
+
+$proceso_subida = inferirProcesoDocumento($programa_educativo_alumno, $cuatrimestre_alumno);
+$yaSubioDocumentoRequerido = (strpos($proceso_subida, '10') !== false) ? $yaSubioING : $yaSubioTSU;
+$haTerminadoTodo = $yaSubioDocumentoRequerido;
 require __DIR__ . '/views/dashboard.view.php';

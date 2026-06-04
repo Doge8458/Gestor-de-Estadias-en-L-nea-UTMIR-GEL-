@@ -103,6 +103,8 @@ document.addEventListener('DOMContentLoaded', function () {
         fileInput.addEventListener('change', () => actualizarNombreArchivo(fileInput));
     }
 
+    configurarFotoPerfil();
+
     const btnMessageOk = document.getElementById('btnMessageOk');
     if (btnMessageOk && typeof cerrarMensajeYRecargar === 'function') {
         btnMessageOk.addEventListener('click', cerrarMensajeYRecargar);
@@ -110,6 +112,72 @@ document.addEventListener('DOMContentLoaded', function () {
 
     configurarNotificaciones();
 });
+
+function configurarFotoPerfil() {
+    const form = document.getElementById('profilePhotoForm');
+    const input = document.getElementById('foto_perfil');
+    const avatar = document.getElementById('profileAvatar');
+    const status = document.getElementById('profilePhotoStatus');
+
+    if (!form || !input || !avatar || !status) {
+        return;
+    }
+
+    const setStatus = (message, type = '') => {
+        status.textContent = message;
+        status.className = `profile-photo-status ${type}`.trim();
+    };
+
+    input.addEventListener('change', async () => {
+        const file = input.files && input.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            setStatus('Usa JPG, PNG o WEBP.', 'is-error');
+            input.value = '';
+            return;
+        }
+
+        if (file.size > 3 * 1024 * 1024) {
+            setStatus('La imagen debe pesar menos de 3MB.', 'is-error');
+            input.value = '';
+            return;
+        }
+
+        const previousHtml = avatar.innerHTML;
+        const previewUrl = URL.createObjectURL(file);
+        avatar.innerHTML = `<img src="${previewUrl}" alt="Foto de perfil" id="profileAvatarImg">`;
+        setStatus('Guardando...', '');
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('api/subir_foto_perfil.php', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (!response.ok || data.status !== 'success') {
+                avatar.innerHTML = previousHtml;
+                setStatus(data.message || 'No se pudo guardar.', 'is-error');
+                return;
+            }
+
+            avatar.innerHTML = `<img src="${data.foto}?v=${Date.now()}" alt="Foto de perfil" id="profileAvatarImg">`;
+            setStatus('Foto actualizada.', 'is-success');
+        } catch (error) {
+            avatar.innerHTML = previousHtml;
+            setStatus('No se pudo conectar.', 'is-error');
+        } finally {
+            URL.revokeObjectURL(previewUrl);
+            input.value = '';
+        }
+    });
+}
 
 function configurarNotificaciones() {
     const modal = document.getElementById('notificationsModal');

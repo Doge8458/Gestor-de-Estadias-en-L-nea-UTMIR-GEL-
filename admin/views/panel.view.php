@@ -1,12 +1,19 @@
 <?php
 $alumnos_agrupados = [];
+$alumnos_por_carrera = [];
 $busqueda_activa = isset($_GET['q']) ? trim($_GET['q']) : '';
+$terminos_resaltado = $filtros_busqueda ?? [];
 
 if (!function_exists('resaltaBusqueda')) {
     function resaltaBusqueda($texto, $busqueda) {
         if (empty($busqueda) || empty($texto)) return htmlspecialchars($texto);
-        $pattern = '/' . preg_quote($busqueda, '/') . '/i';
-        return preg_replace($pattern, '<mark class="highlight-anim">$0</mark>', htmlspecialchars($texto));
+        $terminos = is_array($busqueda) ? $busqueda : preg_split('/\s+/', trim(str_replace('#', ' ', $busqueda)));
+        $resultado = htmlspecialchars($texto);
+        foreach (array_filter($terminos) as $termino) {
+            $pattern = '/' . preg_quote($termino, '/') . '/i';
+            $resultado = preg_replace($pattern, '<mark class="highlight-anim">$0</mark>', $resultado);
+        }
+        return $resultado;
     }
 }
 
@@ -40,12 +47,29 @@ if (isset($resultado) && $resultado->num_rows > 0) {
     while ($fila = $resultado->fetch_assoc()) {
         $mat = $fila['matricula'];
         if (!isset($alumnos_agrupados[$mat])) {
-            $alumnos_agrupados[$mat] = ['matricula' => $mat, 'nombre_completo' => $fila['nombre_completo'], 'entregas' => []];
+            $alumnos_agrupados[$mat] = [
+                'matricula' => $mat,
+                'nombre_completo' => $fila['nombre_completo'],
+                'programa_educativo' => $fila['programa_educativo'] ?? '',
+                'cuatrimestre' => $fila['cuatrimestre'] ?? '',
+                'entregas' => []
+            ];
         }
         if (!empty($fila['id_entrega'])) {
             $alumnos_agrupados[$mat]['entregas'][] = $fila;
         }
     }
+}
+
+foreach ($alumnos_agrupados as $mat => $alumno) {
+    $carrera = trim($alumno['programa_educativo'] ?? '');
+    if ($carrera === '') {
+        $carrera = 'Sin carrera asignada';
+    }
+    if (!isset($alumnos_por_carrera[$carrera])) {
+        $alumnos_por_carrera[$carrera] = [];
+    }
+    $alumnos_por_carrera[$carrera][$mat] = $alumno;
 }
 ?>
 <!DOCTYPE html>
@@ -76,6 +100,12 @@ if (isset($resultado) && $resultado->num_rows > 0) {
         mark.highlight-anim { background: linear-gradient(to right, rgba(241, 196, 15, 0) 50%, rgba(241, 196, 15, 0.85) 50%); background-size: 200% 100%; background-position: 100% 0; animation: highlight-slide 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; color: #000; padding: 2px 4px; border-radius: 3px; font-weight: 800; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         @keyframes highlight-slide { to { background-position: 0 0; } }
         .pdf-snippet { margin-top: 15px; width: 100%; font-size: 0.85rem; color: var(--texto-claro); background: rgba(0,0,0,0.15); padding: 15px; border-radius: 8px; border-left: 4px solid var(--utmir-verde); font-family: monospace; line-height: 1.6; }
+        @media (max-width: 640px) {
+            .bandcamp-search-container { padding: 18px; }
+            .bandcamp-search-bar { flex-wrap: wrap; gap: 10px; padding: 12px 14px; border-radius: 18px; }
+            .bandcamp-search-bar input { min-width: 0; flex-basis: calc(100% - 42px); font-size: 14px; }
+            .bandcamp-search-bar button { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -114,8 +144,8 @@ if (isset($resultado) && $resultado->num_rows > 0) {
             <p class="hero-subtitle">Visualiza, busca y administra los documentos oficiales subidos por los estudiantes.</p>
         </div>
 
-        <div class="top-row" style="display: flex; gap: 20px; align-items: stretch; margin-bottom: 20px;">
-            <div class="admin-message-card" style="flex: 2; min-width: 300px; margin-bottom: 0;">
+        <div class="admin-overview-grid">
+            <div class="admin-message-card">
                 <div class="admin-message-copy" style="margin-bottom: 15px;">
                     <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.1rem; margin-bottom: 5px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--utmir-naranja)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -135,7 +165,7 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                     </div>
                 </form>
             </div>
-            <div class="periodo-modulo" style="flex: 1; min-width: 250px; margin-bottom: 0; border-left: 4px solid #3498db; display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="periodo-modulo admin-notification-card">
                 <div class="periodo-info">
                     <h3 style="color: #3498db; display: flex; align-items: center; gap: 8px; font-size: 1rem;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -146,6 +176,16 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                 <div class="periodo-actions" style="margin-top: 20px;">
                     <button class="btn-action-small periodo-btn" style="background-color: #3498db; color: white; width: 100%;" id="btnModificarNotificaciones">Configurar Envíos</button>
                 </div>
+            </div>
+            <div class="admin-video-card">
+                <div class="admin-video-thumb">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                </div>
+                <div>
+                    <h3>Video del panel admin</h3>
+                    <p>Acceso rapido al tutorial operativo para revisar expedientes, filtros y cargas.</p>
+                </div>
+                <button type="button" class="btn-action-small" id="btnAbrirVideoAdmin">Ver video</button>
             </div>
         </div>
 
@@ -172,17 +212,17 @@ if (isset($resultado) && $resultado->num_rows > 0) {
             <form action="" method="GET">
                 <div class="bandcamp-search-bar">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--texto-mutado)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 15px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" name="q" placeholder="Filtro Analítico: Matrículas o Palabras Clave dentro del PDF..." value="<?php echo htmlspecialchars($busqueda_activa); ?>">
+                    <input type="text" name="q" placeholder="Busca por #carrera, #matricula, #archivo, nombre o palabras dentro del PDF..." value="<?php echo htmlspecialchars($busqueda_activa); ?>">
                     <button type="submit">Buscar</button>
                 </div>
             </form>
             
             <?php if(!empty($busqueda_activa)): ?>
                 <div class="active-tags">
-                    <span class="filter-tag">
-                        Filtro Activo: <?php echo htmlspecialchars($busqueda_activa); ?>
-                        <a href="panel.php" title="Limpiar filtro">✕</a>
-                    </span>
+                    <?php foreach (($terminos_resaltado ?: [$busqueda_activa]) as $tag): ?>
+                        <span class="filter-tag">#<?php echo htmlspecialchars($tag); ?></span>
+                    <?php endforeach; ?>
+                    <span class="filter-tag filter-tag-clear"><a href="panel.php" title="Limpiar filtro">x</a></span>
                 </div>
             <?php endif; ?>
         </div>
@@ -199,8 +239,24 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (!empty($alumnos_agrupados)): ?>
-                        <?php foreach ($alumnos_agrupados as $mat => $alumno): ?>
+                    <?php if (!empty($alumnos_por_carrera)): ?>
+                        <?php foreach ($alumnos_por_carrera as $carrera_nombre => $alumnos_carrera): ?>
+                            <?php
+                                $careerId = 'career_' . md5($carrera_nombre);
+                                $careerTotal = count($alumnos_carrera);
+                                $studentIndex = 0;
+                            ?>
+                            <tr class="career-folder-row" data-career-toggle="<?php echo $careerId; ?>" data-total-students="<?php echo $careerTotal; ?>" aria-expanded="false">
+                                <td colspan="5">
+                                    <div class="career-folder">
+                                        <span class="career-folder-chevron">+</span>
+                                        <span class="career-folder-icon">#</span>
+                                        <strong><?php echo resaltaBusqueda($carrera_nombre, $busqueda_activa); ?></strong>
+                                        <span><?php echo $careerTotal; ?> alumno(s)</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php foreach ($alumnos_carrera as $mat => $alumno): ?>
                             <?php 
                                 $num_entregas = count($alumno['entregas']);
                                 $uniqueRowId = 'alum_' . $mat;
@@ -215,14 +271,17 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                                     $estado_clase = 'estado-completado';
                                 }
                             ?>
-                            <tr class="main-row" id="row-<?php echo $uniqueRowId; ?>" data-detail-target="details-<?php echo $uniqueRowId; ?>">
+                            <tr class="main-row career-student-row" id="row-<?php echo $uniqueRowId; ?>" data-detail-target="details-<?php echo $uniqueRowId; ?>" data-career-id="<?php echo $careerId; ?>" data-student-index="<?php echo $studentIndex; ?>">
                                 <td><span class="badge-matricula"><?php echo resaltaBusqueda($mat, $busqueda_activa); ?></span></td>
-                                <td class="student-name-cell"><?php echo resaltaBusqueda($alumno['nombre_completo'], $busqueda_activa); ?></td>
+                                <td class="student-name-cell">
+                                    <?php echo resaltaBusqueda($alumno['nombre_completo'], $busqueda_activa); ?>
+                                    <span class="student-meta-line"><?php echo htmlspecialchars($alumno['cuatrimestre'] ?: 'Periodo no asignado'); ?></span>
+                                </td>
                                 <td><span class="estado-badge <?php echo $estado_clase; ?>"><?php echo $estado_texto; ?></span></td>
                                 <td class="muted-cell"><?php echo $num_entregas > 0 ? "Archivos subidos: $num_entregas" : 'Aún no realiza la carga'; ?></td>
                                 <td><button class="btn-action-small">Ver Expediente</button></td>
                             </tr>
-                            <tr id="details-<?php echo $uniqueRowId; ?>" class="detail-row">
+                            <tr id="details-<?php echo $uniqueRowId; ?>" class="detail-row" data-career-id="<?php echo $careerId; ?>">
                                 <td colspan="5">
                                     <div class="detail-content" style="display: flex; flex-direction: column; gap: 15px; padding: 20px;">
                                         <?php if ($num_entregas == 0): ?>
@@ -257,7 +316,7 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                                                     </div>
 
                                                     <?php 
-                                                        $snippet = extractSnippet($entrega['contenido_texto'] ?? '', $busqueda_activa);
+                                                        $snippet = extractSnippet($entrega['contenido_texto'] ?? '', $terminos_resaltado[0] ?? $busqueda_activa);
                                                         if (!empty($snippet)): 
                                                     ?>
                                                         <div class="pdf-snippet">
@@ -271,6 +330,18 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                                     </div>
                                 </td>
                             </tr>
+                            <?php $studentIndex++; endforeach; ?>
+                            <?php if ($careerTotal > 10): ?>
+                                <tr class="career-pagination-row" data-career-pagination="<?php echo $careerId; ?>">
+                                    <td colspan="5">
+                                        <div class="career-pagination">
+                                            <button type="button" class="btn-action-small btn-career-page" data-career-prev="<?php echo $careerId; ?>">Anterior</button>
+                                            <span data-career-page-label="<?php echo $careerId; ?>">Pagina 1</span>
+                                            <button type="button" class="btn-action-small btn-career-page" data-career-next="<?php echo $careerId; ?>">Siguiente</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr><td colspan="5"><div class="empty-state"><h3>No se encontraron registros</h3><p>Intenta con otros términos analíticos.</p></div></td></tr>
@@ -365,6 +436,28 @@ if (isset($resultado) && $resultado->num_rows > 0) {
                     <button type="submit" class="btn-ok" style="background-color: #3498db; color: white;">Guardar Periodo</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalVideoAdmin">
+        <div class="modal-box admin-video-modal-box">
+            <h3 class="modal-title modal-title-green">Tutorial del Panel Administrativo</h3>
+            <iframe class="admin-video-frame" src="https://www.youtube.com/embed/ha5shSJ56Ac?rel=0&modestbranding=1" title="Tutorial del panel administrativo" allowfullscreen></iframe>
+            <div class="modal-actions" style="margin-top: 18px;">
+                <button type="button" class="btn-cancel" data-modal-close="modalVideoAdmin">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalCargaExcel">
+        <div class="modal-box excel-loading-box">
+            <div class="excel-loading-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M8 13h8"></path><path d="M8 17h6"></path></svg>
+            </div>
+            <h3 class="modal-title" id="excelLoadingTitle">Procesando base de datos</h3>
+            <p class="modal-text" id="excelLoadingText">Preparando lectura del archivo...</p>
+            <div class="excel-progress-track"><div class="excel-progress-fill" id="excelProgressFill"></div></div>
+            <span class="excel-progress-text" id="excelProgressText">0%</span>
         </div>
     </div>
 

@@ -11,7 +11,7 @@
         /* Diseño original de Barra Lateral y Fix Móvil */
         :root { --sidebar-width: 280px; }
         body { margin: 0; padding: 0; box-sizing: border-box; }
-        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: var(--bg-sidebar, #0B131E); border-right: 1px solid var(--borde-color, #1f2937); display: flex; flex-direction: column; z-index: 1050; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); overflow-y: auto; overflow-x: hidden; }
+        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; height: 100dvh; background: var(--bg-sidebar, #0B131E); border-right: 1px solid var(--borde-color, #1f2937); display: flex; flex-direction: column; z-index: 1050; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); overflow: hidden; }
         .main-content { margin-left: var(--sidebar-width); padding: 30px 4%; transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1); min-height: 100vh; display: flex; flex-direction: column; }
         .sidebar-overlay { display: none; }
         .mobile-header { display: none; }
@@ -20,7 +20,7 @@
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 992px) {
-            .sidebar { transform: translateX(-100%); } 
+            .sidebar { transform: translateX(-100%); width: min(86vw, 330px); height: 100vh; height: 100dvh; overflow-y: auto; }
             .sidebar.active { transform: translateX(0); box-shadow: 5px 0 25px rgba(0,0,0,0.5); }
             .main-content { margin-left: 0; padding-top: 90px; }
             .mobile-header { display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 70px; background: var(--bg-sidebar, #0B131E); border-bottom: 3px solid #00a859; z-index: 1040; padding: 0 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); box-sizing: border-box;}
@@ -42,7 +42,7 @@
         .video-thumb-card { background: var(--bg-card, #1f2937); border: 1px solid var(--borde-color, #374151); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; text-align: center; width: 140px; flex-shrink: 0; }
         .video-thumb-card:hover { border-color: #00a859; transform: translateY(-3px); }
         .video-thumb-card svg { stroke: #00a859; margin-bottom: 8px; }
-        .sidebar-bottom { margin-top: auto; padding-bottom: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px;}
+        .sidebar-bottom { margin-top: auto; padding-bottom: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;}
         .notification-fab { display: none !important; } 
 
         .notif-modal-list { max-height: 55vh; overflow-y: auto; padding-right: 10px; }
@@ -80,9 +80,23 @@
             <span>Portal Estadías</span>
         </div>
         <div class="profile-card">
-            <div class="profile-avatar"><?php echo strtoupper(substr($nombre_alumno, 0, 1)); ?></div>
+            <div class="profile-avatar" id="profileAvatar">
+                <?php if (!empty($foto_perfil)): ?>
+                    <img src="<?php echo htmlspecialchars($foto_perfil); ?>" alt="Foto de perfil" id="profileAvatarImg">
+                <?php else: ?>
+                    <span id="profileAvatarInitial"><?php echo strtoupper(substr($nombre_alumno, 0, 1)); ?></span>
+                <?php endif; ?>
+            </div>
             <h2><?php echo htmlspecialchars($nombre_alumno); ?></h2>
             <div class="matricula-badge"><?php echo htmlspecialchars($matricula_alumno); ?></div>
+            <form class="profile-photo-form" id="profilePhotoForm" enctype="multipart/form-data">
+                <label class="profile-photo-btn" for="foto_perfil">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <span>Cambiar foto</span>
+                </label>
+                <input type="file" name="foto_perfil" id="foto_perfil" class="profile-photo-input" accept="image/jpeg,image/png,image/webp">
+                <p class="profile-photo-status" id="profilePhotoStatus"></p>
+            </form>
         </div>
         <div class="mascot-container"><img src="assets/images/robin_utmir.png" alt="Robin Mascota UTMIR" class="mascot-img"></div>
         
@@ -149,22 +163,22 @@
                     Periodo de Recepción</h3>
                     <p>Mantente al tanto de la fecha límite para la carga de tu memoria. La plataforma se cerrará automáticamente al finalizar el contador.</p>
                 </div>
-                <div class="countdown-box" style="margin-top: 20px; display: flex; gap: 20px; justify-content: flex-start;">
-                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; flex: 1; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                        <span class="cd-number" id="cd-dias" style="font-size: 3.5rem; font-weight: 800; color: #10b981; line-height: 1;">00</span>
-                        <span class="cd-label" style="font-size: 1rem; color: #9ca3af; margin-top: 10px; letter-spacing: 2px; font-weight: 600;">DÍAS</span>
+                <div class="countdown-box">
+                    <div class="cd-item">
+                        <span class="cd-number" id="cd-dias">00</span>
+                        <span class="cd-label">DÍAS</span>
                     </div>
-                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; flex: 1; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                        <span class="cd-number" id="cd-horas" style="font-size: 3.5rem; font-weight: 800; color: #10b981; line-height: 1;">00</span>
-                        <span class="cd-label" style="font-size: 1rem; color: #9ca3af; margin-top: 10px; letter-spacing: 2px; font-weight: 600;">HORAS</span>
+                    <div class="cd-item">
+                        <span class="cd-number" id="cd-horas">00</span>
+                        <span class="cd-label">HORAS</span>
                     </div>
-                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; flex: 1; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                        <span class="cd-number" id="cd-mins" style="font-size: 3.5rem; font-weight: 800; color: #10b981; line-height: 1;">00</span>
-                        <span class="cd-label" style="font-size: 1rem; color: #9ca3af; margin-top: 10px; letter-spacing: 2px; font-weight: 600;">MINS</span>
+                    <div class="cd-item">
+                        <span class="cd-number" id="cd-mins">00</span>
+                        <span class="cd-label">MINS</span>
                     </div>
-                    <div class="cd-item" style="background: #111827; padding: 25px 35px; border-radius: 12px; flex: 1; border: 2px solid #1f2937; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                        <span class="cd-number" id="cd-segs" style="font-size: 3.5rem; font-weight: 800; color: #10b981; line-height: 1;">00</span>
-                        <span class="cd-label" style="font-size: 1rem; color: #9ca3af; margin-top: 10px; letter-spacing: 2px; font-weight: 600;">SEGS</span>
+                    <div class="cd-item">
+                        <span class="cd-number" id="cd-segs">00</span>
+                        <span class="cd-label">SEGS</span>
                     </div>
                 </div>
             </div>
@@ -243,16 +257,21 @@
                     <form id="uploadForm" enctype="multipart/form-data">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>1. Nivel Educativo</label>
-                                <select name="cuatrimestre" id="cuatrimestre" class="form-select" required>
+                                <label>1. Proceso detectado</label>
+                                <input type="text" class="form-select locked-field" value="<?php echo htmlspecialchars($proceso_subida); ?>" readonly>
+                                <input type="hidden" name="cuatrimestre" id="cuatrimestre" value="<?php echo htmlspecialchars($proceso_subida); ?>">
+                                <select class="is-hidden" aria-hidden="true">
                                     <option value="">-- Seleccione una opción --</option>
                                     <?php if (!$yaSubioTSU): ?><option value="6º cuatrimestre (Técnico Superior Universitario)">6º cuatrimestre (Técnico Superior Universitario)</option><?php endif; ?>
                                     <?php if (!$yaSubioING): ?><option value="10º cuatrimestre (Ingeniería/Licenciatura)">10º cuatrimestre (Ingeniería/Licenciatura)</option><?php endif; ?>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>2. Programa Educativo</label>
-                                <select id="carrera" name="programa_educativo" class="form-select" required>
+                                <label>2. Carrera detectada</label>
+                                <input type="text" class="form-select locked-field" value="<?php echo htmlspecialchars($programa_educativo_alumno ?: 'Carrera pendiente de asignar'); ?>" readonly>
+                                <input type="hidden" id="carrera" name="programa_educativo" value="<?php echo htmlspecialchars($programa_educativo_alumno); ?>">
+                                <?php if (!empty($cuatrimestre_alumno)): ?><span class="example-text">Periodo registrado: <?php echo htmlspecialchars($cuatrimestre_alumno); ?></span><?php endif; ?>
+                                <select class="is-hidden" aria-hidden="true">
                                     <option value="">-- Seleccione su carrera --</option>
                                     <option value="Licenciatura en Ingeniería en Tecnologías de la Información e Innovación Digital">Licenciatura en Ingeniería en Tecnologías de la Información e Innovación Digital</option>
                                     <option value="Licenciatura en Ingeniería Civil">Licenciatura en Ingeniería Civil</option>

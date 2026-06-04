@@ -28,12 +28,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["memoria_archivo"])) {
     }
 
     $matricula = $_SESSION['matricula'];
-    $nombre_limpio = str_replace(' ', '', $_SESSION['nombre']); 
-    $programa = $_POST['programa_educativo'];
-    $cuatrimestre = $_POST['cuatrimestre']; 
+    $nombre_limpio = str_replace(' ', '', $_SESSION['nombre']);
+    $programa = trim($_POST['programa_educativo'] ?? '');
+    $cuatrimestre = trim($_POST['cuatrimestre'] ?? '');
+
+    $conexionAlumno = new mysqli("localhost", "root", "", "portal_estadias");
+    if (!$conexionAlumno->connect_error) {
+        $stmtAlumno = $conexionAlumno->prepare("SELECT programa_educativo, cuatrimestre FROM alumnos WHERE matricula = ?");
+        $stmtAlumno->bind_param("i", $matricula);
+        $stmtAlumno->execute();
+        $stmtAlumno->bind_result($programaDb, $cuatrimestreDb);
+        if ($stmtAlumno->fetch()) {
+            if (!empty($programaDb)) {
+                $programa = $programaDb;
+            }
+            $textoProceso = mb_strtolower(($programaDb ?? '') . ' ' . ($cuatrimestreDb ?? ''), 'UTF-8');
+            if (strpos($textoProceso, 'licenciatura') !== false || strpos($textoProceso, 'ingenier') !== false || strpos($textoProceso, '10') !== false || strpos($textoProceso, '11') !== false) {
+                $cuatrimestre = '10º cuatrimestre (Ingeniería/Licenciatura)';
+            } else {
+                $cuatrimestre = '6º cuatrimestre (Técnico Superior Universitario)';
+            }
+        }
+        $stmtAlumno->close();
+        $conexionAlumno->close();
+    }
+
+    if ($programa === '' || $cuatrimestre === '') {
+        echo json_encode(['status' => 'error', 'message' => 'Tu carrera o proceso aun no esta asignado. Contacta al administrador.']);
+        exit;
+    }
     
     // Nomenclatura corregida para las carpetas internas
-    $nivel_carpeta = (strpos(strtolower($cuatrimestre), '6º') !== false || strpos(strtolower($cuatrimestre), '6to') !== false) ? "6to" : "10mo";
+    $nivel_carpeta = (strpos($cuatrimestre, '6') !== false || stripos($cuatrimestre, 'tsu') !== false || stripos($cuatrimestre, 'tecnico') !== false || stripos($cuatrimestre, 'técnico') !== false) ? "6to" : "10mo";
 
     $nuevo_nombre_pdf = "{$matricula}_{$nombre_limpio}_{$programa}_{$nivel_carpeta}.pdf";
 
